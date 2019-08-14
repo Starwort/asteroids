@@ -1,0 +1,51 @@
+*, *:before, *:after {
+  box-sizing: border-box;
+  font-weight: normal;
+  padding: 0;
+  margin: 0;
+  line-height: 1;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  font-family: sans-serif;
+  font-size: 100%;
+  font-weight: 300;
+  color: #eee;
+  background-color: #222;
+  overflow: hidden;
+}
+
+body {
+  background-image: repeating-linear-gradient(to bottom, transparent 0 ,transparent 3px, #000 3px, #000 4px);
+  background-size: 100% 4px, cover;
+  box-shadow: 0 0 20vmin 15vmin rgba(0,0,0,0.3) inset;
+}
+
+#game {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  margin: auto;
+/*
+  // remove for pixelated scaling
+  image-rendering: optimizeSpeed;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: -o-crisp-edges;
+  image-rendering: pixelated;
+  -ms-interpolation-mode: nearest-neighbor;
+*/
+}
+
+#fps {
+  position: absolute;
+  bottom: 0.5em;
+  right: 0.5em;
+  font-size: 0.8em;
+}
+
+
