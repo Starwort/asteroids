@@ -10,6 +10,7 @@ const game = {
 window.addEventListener('DOMContentLoaded', () => {
 
   canvasInit();
+  inputInit();
 
   main();
 
@@ -58,20 +59,25 @@ function canvasClear() {
 }
 
 
-// game loop
-function main() {
+// keyboard input control
+function inputInit() {
 
-  game.ship = new sprite.Ship(game);
-
-  // key bindings
-  game.pad = {};
+  // key bindings: cursor/WASD, space/P
   let key = {
-    37: 'rotateLeft',
-    39: 'rotateRight',
-    40: 'thrust'
+    37: 'left',
+    65: 'left',
+    39: 'right',
+    68: 'right',
+    38: 'up',
+    87: 'up',
+    40: 'down',
+    83: 'down',
+    32: 'fire',
+    80: 'fire'
   };
 
-  for (let k in key) game.pad[key[k]] = 0;
+  game.input = {};
+  for (let k in key) game.input[key[k]] = 0;
 
   // key press events
   window.addEventListener('keydown', keyHandler);
@@ -82,12 +88,21 @@ function main() {
       down = (e.type === 'keydown' ? 1 : 0),
       k = key[e.keyCode];
 
-    if (k) game.pad[k] = down;
+    if (k) game.input[k] = down;
   }
+
+}
+
+
+// game loop
+function main() {
+
+  const ship = new sprite.Ship(game);
+  ship.userControl = true;
 
   let
     last = 0,
-    fps = 0, fpsTot = 0, fpsRec = 0, fpsRecMax = 100;
+    fps = 0, fpsTot = 0, fpsRecMax = 100, fpsRec = fpsRecMax;
 
   // main game look
   function loop(timer) {
@@ -97,12 +112,12 @@ function main() {
 
     // FPS calculation
     fpsTot += time;
-    fpsRec++;
-    if (fpsRec >= fpsRecMax) {
+    fpsRec--;
+    if (fpsRec <= 0) {
 
       let fpsNow = Math.round(fpsTot / fpsRecMax);
       fpsTot = 0;
-      fpsRec = 0;
+      fpsRec = fpsRecMax;
 
       if (fpsNow && fpsNow !== fps) {
         fps = fpsNow;
@@ -110,12 +125,9 @@ function main() {
       }
     }
 
-    // ship rotation
-    game.ship.rotate(game.pad.rotateLeft, game.pad.rotateRight, time);
-
     // draw canvas
     canvasClear();
-    game.ship.draw();
+    ship.draw(time);
 
     requestAnimationFrame(loop);
   }
