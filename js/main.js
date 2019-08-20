@@ -11,6 +11,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
   canvasInit();
   inputInit();
+  defineSprites();
 
   main();
 
@@ -26,6 +27,8 @@ function canvasInit() {
   game.maxX = game.width / 2;
   game.maxY = game.width / 2;
   game.ratio = game.width / game.height;
+
+  game.spriteSize = Math.ceil(game.width / 30);
 
   game.ctx = game.canvas.getContext('2d');
 
@@ -68,12 +71,11 @@ function inputInit() {
     65: 'left',
     39: 'right',
     68: 'right',
+    32: 'up',
     38: 'up',
     87: 'up',
     40: 'down',
-    83: 'down',
-    32: 'fire',
-    80: 'fire'
+    83: 'down'
   };
 
   game.input = {};
@@ -94,18 +96,42 @@ function inputInit() {
 }
 
 
+// define initial sprites
+function defineSprites() {
+
+  // define objects
+  game.obj = new Map();
+
+  // random rocks
+  for (let r = 5; r > 0; r--) game.obj.set(`rock${r}`, new sprite.Rock(game));
+
+  // user controlled ship
+  game.shipUser = new sprite.Ship(game);
+  game.shipUser.userControl = true;
+
+  game.obj.set('ship', game.shipUser);
+
+}
+
+
+// shoot bullet
+function shoot(ship) {
+
+  if (!ship || !ship.alive || !game.input.up || game.obj.has('bullet')) return;
+  game.obj.set('bullet', new sprite.Bullet(game, ship));
+
+}
+
+
 // game loop
 function main() {
-
-  const ship = new sprite.Ship(game);
-  ship.userControl = true;
 
   let
     last = 0,
     fps = 0, fpsTot = 0, fpsRecMax = 100, fpsRec = fpsRecMax;
 
   // main game look
-  function loop(timer) {
+  function loop(timer = 1) {
 
     let time = 1000 / (timer - last);
     last = timer;
@@ -125,10 +151,22 @@ function main() {
       }
     }
 
+
+    // create shots
+    shoot(game.shipUser);
+
     // draw canvas
     canvasClear();
-    ship.draw(time);
 
+    // draw sprites
+    game.obj.forEach((item, key) => {
+      item.draw(time);
+      if (!item.alive) {
+        game.obj.delete(key);
+      }
+    });
+
+    // next frame
     requestAnimationFrame(loop);
   }
   loop();
