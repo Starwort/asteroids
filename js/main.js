@@ -19,6 +19,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
   canvasInit();
   inputInit();
+  defineSounds();
   defineSprites();
 
   gameActive();
@@ -112,6 +113,17 @@ function inputInit() {
 }
 
 
+// load sound effects
+function defineSounds() {
+
+  let effect = ['shoot', 'explode'];
+
+  game.sound = {};
+  effect.forEach(s => game.sound[s] = new Audio(`audio/${s}.mp3`) );
+
+}
+
+
 // define initial sprites
 function defineSprites() {
 
@@ -151,7 +163,10 @@ function shoot(ship) {
   if (!ship || !ship.alive || ship.bullet.size >= ship.bulletMax || (ship.bulletFire && game.input.up)) return;
 
   ship.bulletFire = !!game.input.up;
-  if (ship.bulletFire) ship.bullet.add( new sprite.Bullet(game, ship) );
+  if (ship.bulletFire) {
+    sound(game.sound.shoot);
+    ship.bullet.add( new sprite.Bullet(game, ship) );
+  }
 
 }
 
@@ -200,6 +215,13 @@ function main() {
       // draw user bullets
       drawAll(game.userShip.bullet, time);
 
+      // detect bullet/rock collision
+      collide(game.userShip.bullet, game.rock, function(bullet, rock) {
+        game.userShip.bullet.delete(bullet);
+        rock.fillColor = `rgb(${Math.random() * 256}, ${Math.random() * 256}, ${Math.random() * 256})`;
+        sound(game.sound.explode);
+      });
+
     }
 
     // next frame
@@ -218,5 +240,28 @@ function drawAll(set, time) {
     item.draw(time);
     if (!item.alive) set.delete(item);
   });
+
+}
+
+
+// detect collsions between two sets of sprites
+function collide(set1, set2, cfunc) {
+
+  set1.forEach(i1 => {
+    set2.forEach(i2 => {
+
+      if (sprite.collision(i1, i2)) cfunc(i1, i2);
+
+    });
+  });
+
+}
+
+
+// play a sound effect
+function sound(audio) {
+
+  audio.fastSeek(0);
+  audio.play();
 
 }

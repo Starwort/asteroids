@@ -35,6 +35,7 @@ class Sprite {
     // sizing
     this.size = game.spriteSize;
     this.setScale = 1;
+    this.setCollide = 1;
 
     // rotation acceleration and deceleration
     this.dirRot = 0;
@@ -64,6 +65,11 @@ class Sprite {
     this.scale = relative;
     this.boundX = this.maxX + this.size * this.scale;
     this.boundY = this.maxY + this.size * this.scale;
+  }
+
+  // collide radius
+  set setCollide(r = 1) {
+    this.collide = this.size * this.scale * r;
   }
 
   // move sprite
@@ -246,8 +252,8 @@ export class Bullet extends Sprite {
     this.x = ship.x + Math.cos(ship.dir) * ship.size * ship.scale;
     this.y = ship.y + Math.sin(ship.dir) * ship.size * ship.scale;
 
-    this.velX = Math.cos(this.dir) * (-ship.velX + 10);
-    this.velY = Math.sin(this.dir) * (-ship.velY + 10);
+    this.velX = Math.cos(this.dir) * 10;
+    this.velY = Math.sin(this.dir) * 10;
     this.velDec = 2;
     this.lifespan = 3000;
 
@@ -311,5 +317,13 @@ export class Rock extends Sprite {
     }
 
   }
+
+}
+
+
+// detect collision between two sprites
+export function collision(s1, s2) {
+
+  return Math.sqrt(((s1.x - s2.x) ** 2) + ((s1.y - s2.y) ** 2)) <= (s1.collide + s2.collide);
 
 }
