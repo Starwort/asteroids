@@ -46,7 +46,7 @@ class Sprite {
     this.velX = 0;
     this.velY = 0;
     this.velAcc = 15;
-    this.velMax = 80;
+    this.velMax = 25;
     this.velDec = 2;
 
     // styles
@@ -108,10 +108,10 @@ class Sprite {
       let v = this.velAcc / time;
 
       this.velX += v * Math.cos(this.dir);
-      this.velX = Math.min(this.velX, this.velMax);
+      this.velX = Math.min(Math.max(-this.velMax, this.velX), this.velMax);
 
       this.velY += v * Math.sin(this.dir);
-      this.velY = Math.min(this.velY, this.velMax);
+      this.velY = Math.min(Math.max(-this.velMax, this.velY), this.velMax);
 
     }
 
@@ -246,8 +246,8 @@ export class Bullet extends Sprite {
     this.x = ship.x + Math.cos(ship.dir) * ship.size * ship.scale;
     this.y = ship.y + Math.sin(ship.dir) * ship.size * ship.scale;
 
-    this.velX = Math.cos(this.dir) * 10;
-    this.velY = Math.sin(this.dir) * 10;
+    this.velX = Math.cos(this.dir) * (-ship.velX + 10);
+    this.velY = Math.sin(this.dir) * (-ship.velY + 10);
     this.velDec = 2;
     this.lifespan = 3000;
 
@@ -301,12 +301,13 @@ export class Rock extends Sprite {
     this.velDec = 0;
 
     // random shape
-    let slast = 0, sides = 4 + Math.ceil(Math.random() * 4);
-    this.shape = [[0, 1]];
+    const sMin = 2 / 8, sMax = 2 - sMin;
+    let sLast = 0, rLast = 1;
 
-    for (let s = 1; s < sides; s++) {
-      slast += 2 / sides * Math.max(0.8, Math.random() * 1.2);
-      this.shape.push([slast, Math.max(0.6, Math.random()) ]);
+    while (sLast < sMax) {
+      sLast += (Math.random() * sMin) + 0.2;
+      rLast = (rLast === 1 ? (Math.random() * 0.3) + 0.7 : 1);
+      this.shape.push([sLast, rLast]);
     }
 
   }

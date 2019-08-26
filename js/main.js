@@ -1,7 +1,15 @@
+/*
+TODO:
+problem occurs with ship when switching tabs
+current direction appears to be reset in some way?
+*/
+
+
 import * as lib from './lib.js';
 import * as sprite from './sprite.js';
 
 const game = {
+  active: false,
   node: '#game',
   fps: '#fps span'
 };
@@ -13,7 +21,15 @@ window.addEventListener('DOMContentLoaded', () => {
   inputInit();
   defineSprites();
 
-  main();
+  gameActive();
+
+  // pause/resume on tab visibility
+  document.addEventListener('visibilitychange', gameActive, false);
+
+  function gameActive() {
+    game.active = (document.visibilityState === 'visible');
+    if (game.active) main();
+  }
 
 });
 
@@ -99,17 +115,32 @@ function inputInit() {
 // define initial sprites
 function defineSprites() {
 
-  // define objects
-  game.obj = new Map();
+  // initial random rocks
+  game.rock = new Set();
+  for (let r = 5; r > 0; r--) game.rock.add( new sprite.Rock(game) );
 
-  // random rocks
-  for (let r = 5; r > 0; r--) game.obj.set(`rock${r}`, new sprite.Rock(game));
+  // user-controlled ship
+  game.userShip = createShip('#ccf', '#aae', '#115');
+  game.userShip.userControl = true;
 
-  // user controlled ship
-  game.shipUser = new sprite.Ship(game);
-  game.shipUser.userControl = true;
+}
 
-  game.obj.set('ship', game.shipUser);
+
+// create a new ship
+function createShip(line = '#fff', blur = '#eee', fill = '#000') {
+
+  let ship = new sprite.Ship(game);
+
+  // bullet set
+  ship.bullet = new Set();
+  ship.bulletMax = 3;
+  ship.bulletFire = false;
+
+  ship.lineColor = line;
+  ship.lineBlurColor = blur;
+  ship.fillColor = fill;
+
+  return ship;
 
 }
 
@@ -117,8 +148,10 @@ function defineSprites() {
 // shoot bullet
 function shoot(ship) {
 
-  if (!ship || !ship.alive || !game.input.up || game.obj.has('bullet')) return;
-  game.obj.set('bullet', new sprite.Bullet(game, ship));
+  if (!ship || !ship.alive || ship.bullet.size >= ship.bulletMax || (ship.bulletFire && game.input.up)) return;
+
+  ship.bulletFire = !!game.input.up;
+  if (ship.bulletFire) ship.bullet.add( new sprite.Bullet(game, ship) );
 
 }
 
@@ -126,50 +159,64 @@ function shoot(ship) {
 // game loop
 function main() {
 
-  let
-    last = 0,
-    fps = 0, fpsTot = 0, fpsRecMax = 100, fpsRec = fpsRecMax;
+  const fpsRecMax = 100;
+  let last, fps = 0, fpsTot = 0, fpsRec = fpsRecMax;
+  loop();
 
   // main game look
-  function loop(timer = 1) {
+  function loop(timer) {
 
-    let time = 1000 / (timer - last);
-    last = timer;
+    if (last) {
 
-    // FPS calculation
-    fpsTot += time;
-    fpsRec--;
-    if (fpsRec <= 0) {
+      let time = 1000 / (timer - last);
 
-      let fpsNow = Math.round(fpsTot / fpsRecMax);
-      fpsTot = 0;
-      fpsRec = fpsRecMax;
+      // FPS calculation
+      fpsTot += time;
+      fpsRec--;
+      if (fpsRec <= 0) {
 
-      if (fpsNow && fpsNow !== fps) {
-        fps = fpsNow;
-        game.fps.textContent = fps;
+        let fpsNow = Math.round(fpsTot / fpsRecMax);
+        fpsTot = 0;
+        fpsRec = fpsRecMax;
+
+        if (fpsNow && fpsNow !== fps) {
+          fps = fpsNow;
+          game.fps.textContent = fps;
+        }
       }
+
+      // create shots
+      shoot(game.userShip);
+
+      // draw canvas
+      canvasClear();
+
+      // draw rocks
+      drawAll(game.rock, time);
+
+      // draw user ship
+      game.userShip.draw(time);
+
+      // draw user bullets
+      drawAll(game.userShip.bullet, time);
+
     }
 
-
-    // create shots
-    shoot(game.shipUser);
-
-    // draw canvas
-    canvasClear();
-
-    // draw sprites
-    game.obj.forEach((item, key) => {
-      item.draw(time);
-      if (!item.alive) {
-        game.obj.delete(key);
-      }
-    });
-
     // next frame
-    requestAnimationFrame(loop);
+    last = timer;
+    if (game.active) requestAnimationFrame(loop);
+
   }
-  loop();
 
 }
 
+
+// draw all items in a set
+function drawAll(set, time) {
+
+  set.forEach(item => {
+    item.draw(time);
+    if (!item.alive) set.delete(item);
+  });
+
+}
