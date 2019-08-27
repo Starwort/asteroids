@@ -214,9 +214,7 @@ function splitRock(rock) {
 
     do {
 
-      let
-        r = new sprite.Rock(game),
-        p = Math.PI * 2 * Math.random();
+      let r = new sprite.Rock(game);
 
       r.setScale = scale;
       r.x = rock.x;
