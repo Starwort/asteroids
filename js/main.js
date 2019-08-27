@@ -1,25 +1,23 @@
-/*
-TODO:
-problem occurs with ship when switching tabs
-current direction appears to be reset in some way?
-*/
-
-
+/* main game */
 import * as lib from './lib.js';
+import { inputInit } from './input.js';
+import * as sound from './sound.js';
 import * as sprite from './sprite.js';
 
 const game = {
   active: false,
   node: '#game',
-  fps: '#fps span'
+  fps: '#fps span',
+  toucharea: '#touch'
 };
 
 // initialise
 window.addEventListener('DOMContentLoaded', () => {
 
   canvasInit();
-  inputInit();
-  defineSounds();
+
+  game.input = inputInit(document.querySelector(game.toucharea));
+  sound.init();
   defineSprites();
 
   gameActive();
@@ -79,51 +77,6 @@ function canvasClear() {
 }
 
 
-// keyboard input control
-function inputInit() {
-
-  // key bindings: cursor/WASD, space/P
-  let key = {
-    37: 'left',
-    65: 'left',
-    39: 'right',
-    68: 'right',
-    32: 'up',
-    38: 'up',
-    87: 'up',
-    40: 'down',
-    83: 'down'
-  };
-
-  game.input = {};
-  for (let k in key) game.input[key[k]] = 0;
-
-  // key press events
-  window.addEventListener('keydown', keyHandler);
-  window.addEventListener('keyup', keyHandler);
-
-  function keyHandler(e) {
-    let
-      down = (e.type === 'keydown' ? 1 : 0),
-      k = key[e.keyCode];
-
-    if (k) game.input[k] = down;
-  }
-
-}
-
-
-// load sound effects
-function defineSounds() {
-
-  let effect = ['shoot', 'explode'];
-
-  game.sound = {};
-  effect.forEach(s => game.sound[s] = new Audio(`audio/${s}.mp3`) );
-
-}
-
-
 // define initial sprites
 function defineSprites() {
 
@@ -132,14 +85,14 @@ function defineSprites() {
   for (let r = 5; r > 0; r--) game.rock.add( new sprite.Rock(game) );
 
   // user-controlled ship
-  game.userShip = createShip('#ccf', '#aae', '#115');
+  game.userShip = createShip();
   game.userShip.userControl = true;
 
 }
 
 
 // create a new ship
-function createShip(line = '#fff', blur = '#eee', fill = '#000') {
+function createShip(line = '#6f0', blur = '#6f0', fill = '#131') {
 
   let ship = new sprite.Ship(game);
 
@@ -164,7 +117,7 @@ function shoot(ship) {
 
   ship.bulletFire = !!game.input.up;
   if (ship.bulletFire) {
-    sound(game.sound.shoot);
+    sound.play('shoot');
     ship.bullet.add( new sprite.Bullet(game, ship) );
   }
 
@@ -175,7 +128,7 @@ function shoot(ship) {
 function main() {
 
   const fpsRecMax = 100;
-  let last, fps = 0, fpsTot = 0, fpsRec = fpsRecMax;
+  let last = 0, fps = 0, fpsTot = 0, fpsRec = fpsRecMax;
   loop();
 
   // main game look
@@ -216,11 +169,7 @@ function main() {
       drawAll(game.userShip.bullet, time);
 
       // detect bullet/rock collision
-      collide(game.userShip.bullet, game.rock, function(bullet, rock) {
-        game.userShip.bullet.delete(bullet);
-        rock.fillColor = `rgb(${Math.random() * 256}, ${Math.random() * 256}, ${Math.random() * 256})`;
-        sound(game.sound.explode);
-      });
+      sprite.collideSet(game.userShip.bullet, game.rock, userBulletRock);
 
     }
 
@@ -244,24 +193,48 @@ function drawAll(set, time) {
 }
 
 
-// detect collsions between two sets of sprites
-function collide(set1, set2, cfunc) {
+// user's bullet hits a rock
+function userBulletRock(bullet, rock) {
 
-  set1.forEach(i1 => {
-    set2.forEach(i2 => {
-
-      if (sprite.collision(i1, i2)) cfunc(i1, i2);
-
-    });
-  });
+  game.userShip.bullet.delete(bullet);
+  splitRock(rock);
 
 }
 
 
-// play a sound effect
-function sound(audio) {
+// split a rock
+function splitRock(rock) {
 
-  audio.fastSeek(0);
-  audio.play();
+  // create new rocks
+  if (rock.scale > 0.5) {
+
+    let
+      rockNew = lib.randomInt(2,3),
+      scale = rock.scale / rockNew;
+
+    do {
+
+      let
+        r = new sprite.Rock(game),
+        p = Math.PI * 2 * Math.random();
+
+      r.setScale = scale;
+      r.x = rock.x;
+      r.y = rock.y;
+
+      r.velX = (Math.random() - 0.5) * (2.5 / scale);
+      r.velY = (Math.random() - 0.5) * (2.5 / scale);
+
+      game.rock.add(r);
+
+      rockNew--;
+
+    } while (rockNew);
+
+  }
+
+  // remove rock
+  game.rock.delete(rock);
+  sound.play('explode');
 
 }

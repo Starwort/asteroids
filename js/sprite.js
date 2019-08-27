@@ -1,4 +1,6 @@
 // base sprite class
+import * as lib from './lib.js';
+
 class Sprite {
 
   // initialise
@@ -209,9 +211,9 @@ export class Ship extends Sprite {
     this.type = 'ship';
 
     // style
-    this.lineColor = '#eef';
-    this.lineBlurColor = '#ccf';
-    this.fillColor = '#113';
+    this.lineColor = '#6f0';
+    this.lineBlurColor = '#6f0';
+    this.fillColor = '#131';
 
     // radian (pi multiples) and radius pairs
     this.shape = [
@@ -241,8 +243,9 @@ export class Bullet extends Sprite {
 
     // style
     this.setScale = 0.2;
+    this.setCollide = 0.1;
     this.lineWidth = 3;
-    this.lineColor = '#99f';
+    this.lineColor = '#9f9';
     this.lineBlur = 0;
     this.lineBlurColor = '';
     this.fillColor = '';
@@ -277,10 +280,14 @@ export class Rock extends Sprite {
     this.type = 'rock';
 
     // style
+    let c = lib.randomInt(6, 15).toString(16);
+    c = `#${c + c + c}`;
+
     this.setScale = 2;
-    this.lineColor = '#999';
-    this.lineBlurColor = '#ccc';
-    this.fillColor = '#111';
+    this.setCollide = 0.8;
+    this.lineColor = c;
+    this.lineBlurColor = c;
+    this.fillColor = '#222';
     this.fillStep = 1;
 
     // random position
@@ -307,12 +314,12 @@ export class Rock extends Sprite {
     this.velDec = 0;
 
     // random shape
-    const sMin = 2 / 8, sMax = 2 - sMin;
+    const sMin = 2 / (5 * this.scale), sMax = 2 - sMin;
     let sLast = 0, rLast = 1;
 
     while (sLast < sMax) {
       sLast += (Math.random() * sMin) + 0.2;
-      rLast = (rLast === 1 ? (Math.random() * 0.3) + 0.7 : 1);
+      rLast = (rLast === 1 ? lib.randomInt(6, 10) / 10 : 1);
       this.shape.push([sLast, rLast]);
     }
 
@@ -325,5 +332,22 @@ export class Rock extends Sprite {
 export function collision(s1, s2) {
 
   return Math.sqrt(((s1.x - s2.x) ** 2) + ((s1.y - s2.y) ** 2)) <= (s1.collide + s2.collide);
+
+}
+
+
+// detect collision between two sets of sprites
+export function collideSet(set1, set2, callback) {
+
+  let col = [];
+
+  set1.forEach(i1 => {
+    set2.forEach(i2 => {
+      if (collision(i1, i2)) col.push([i1, i2]);
+    });
+  });
+
+  // call after collisions detected
+  col.forEach( s => callback.apply(null, s) );
 
 }

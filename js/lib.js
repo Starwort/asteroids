@@ -35,3 +35,9 @@ export function eventThrottle(element, event, callback, delay) {
   }, false);
 
 }
+
+
+// random integer between lo and hi
+export function randomInt(lo, hi) {
+  return Math.floor(Math.random() * (hi - lo + 1)) + lo;
+}
