@@ -29,7 +29,7 @@ export function play(name) {
   const effect = sound[name];
   if (!effect || !effect.audio || !effect.loaded || effect.audio.muted) return;
 
-  if (effect.audio.fastSeek) effect.audio.fastSeek(0);
+  if (effect.audio.currentTime) effect.audio.currentTime = 0;
   effect.audio.play();
 
 }

@@ -37,7 +37,6 @@ class Sprite {
     // sizing
     this.size = game.spriteSize;
     this.setScale = 1;
-    this.setCollide = 1;
 
     // rotation acceleration and deceleration
     this.dirRot = 0;
@@ -67,6 +66,7 @@ class Sprite {
     this.scale = relative;
     this.boundX = this.maxX + this.size * this.scale;
     this.boundY = this.maxY + this.size * this.scale;
+    this.setCollide = 1;
   }
 
   // collide radius
@@ -243,7 +243,7 @@ export class Bullet extends Sprite {
 
     // style
     this.setScale = 0.2;
-    this.setCollide = 0.1;
+    this.setCollide = 0;
     this.lineWidth = 3;
     this.lineColor = '#9f9';
     this.lineBlur = 0;
@@ -284,7 +284,6 @@ export class Rock extends Sprite {
     c = `#${c + c + c}`;
 
     this.setScale = 2;
-    this.setCollide = 0.8;
     this.lineColor = c;
     this.lineBlurColor = c;
     this.fillColor = '#222';
@@ -328,10 +327,10 @@ export class Rock extends Sprite {
 }
 
 
-// detect collision between two sprites
+// detect collision between two sprites (Pythagorus)
 export function collision(s1, s2) {
 
-  return Math.sqrt(((s1.x - s2.x) ** 2) + ((s1.y - s2.y) ** 2)) <= (s1.collide + s2.collide);
+  return ((s1.x - s2.x) ** 2) + ((s1.y - s2.y) ** 2) < ((s1.collide + s2.collide) ** 2);
 
 }
 
@@ -347,7 +346,7 @@ export function collideSet(set1, set2, callback) {
     });
   });
 
-  // call after collisions detected
+  // call after collision detect to ensure newly-created sprites are not checked
   col.forEach( s => callback.apply(null, s) );
 
 }

@@ -168,7 +168,7 @@ function main() {
       // draw user bullets
       drawAll(game.userShip.bullet, time);
 
-      // detect bullet/rock collision
+      // detect user bullet/rock collision
       sprite.collideSet(game.userShip.bullet, game.rock, userBulletRock);
 
     }
@@ -217,6 +217,7 @@ function splitRock(rock) {
       let r = new sprite.Rock(game);
 
       r.setScale = scale;
+      r.setCollide = 1;
       r.x = rock.x;
       r.y = rock.y;
 
