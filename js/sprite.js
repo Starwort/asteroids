@@ -17,6 +17,7 @@ class Sprite {
 
     // is alive?
     this.alive = true;
+    this.health = null;
     this.lifespan = null;
 
     // is user-controlled?
@@ -52,7 +53,7 @@ class Sprite {
     this.velDec = 2;
 
     // styles
-    this.lineWidth = Math.ceil(this.maxX / 250);
+    this.lineWidth = Math.ceil(this.maxX / 200);
     this.lineColor = '#fff';
     this.lineBlur = Math.floor(this.lineWidth * 1.5);
     this.lineBlurColor = this.lineColor;
@@ -209,6 +210,7 @@ export class Ship extends Sprite {
 
     super(game);
     this.type = 'ship';
+    this.health = 100;
 
     // style
     this.lineColor = '#6f0';
@@ -244,7 +246,6 @@ export class Bullet extends Sprite {
     // style
     this.setScale = 0.2;
     this.setCollide = 0;
-    this.lineWidth = 3;
     this.lineColor = '#9f9';
     this.lineBlur = 0;
     this.lineBlurColor = '';
@@ -348,5 +349,42 @@ export function collideSet(set1, set2, callback) {
 
   // call after collision detect to ensure newly-created sprites are not checked
   col.forEach( s => callback.apply(null, s) );
+
+}
+
+
+// detect unique collisions between two sets of sprites
+// an s1 item can only collide with a single s2 item
+export function collideSetUnique(set1, set2, callback) {
+
+  let col = [], isHit;
+
+  set1.forEach(i1 => {
+    isHit = false;
+    set2.forEach(i2 => {
+      if (!isHit) {
+        isHit = collision(i1, i2);
+        if (isHit) col.push([i1, i2]);
+      }
+    });
+  });
+
+  // call after collision detect to ensure newly-created sprites are not checked
+  col.forEach(s => callback.apply(null, s));
+
+}
+
+
+// find first colliding item
+export function collideOne(item, set, callback) {
+
+  let iter = set.entries();
+
+  for (let i2 of iter) {
+    if (collision(item, i2[1])) {
+      callback(item, i2[1]);
+      break;
+    }
+  }
 
 }

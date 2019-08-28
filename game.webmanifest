@@ -1,0 +1,9 @@
+{
+  "name": "Asteroids",
+  "short_name": "Asteroids",
+  "theme_color": "#111111",
+  "background_color": "#111111",
+  "display": "fullscreen",
+  "scope": "/",
+  "start_url": "/index.html"
+}

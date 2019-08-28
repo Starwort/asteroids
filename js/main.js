@@ -7,12 +7,30 @@ import * as sprite from './sprite.js';
 const game = {
   active: false,
   node: '#game',
+  health: '#health',
   fps: '#fps span',
   toucharea: '#touch'
 };
 
+// requestAnimationFrame object
+let rAF;
+
+// fake service worker
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('../sw.js', { scope: '../'})
+    .then(() => {})
+    .catch(() => {});
+}
+
+
 // initialise
 window.addEventListener('DOMContentLoaded', () => {
+
+  // health
+  game.health = document.querySelector(game.health);
+
+  // FPS counter
+  game.fps = document.querySelector(game.fps);
 
   canvasInit();
 
@@ -22,10 +40,11 @@ window.addEventListener('DOMContentLoaded', () => {
 
   gameActive();
 
-  // pause/resume on tab visibility
+  //pause/resume on tab visibility
   document.addEventListener('visibilitychange', gameActive, false);
 
   function gameActive() {
+    if (rAF) cancelAnimationFrame(rAF);
     game.active = (document.visibilityState === 'visible');
     if (game.active) main();
   }
@@ -55,9 +74,6 @@ function canvasInit() {
   canvasResize();
   lib.eventDebounce(window, 'resize', canvasResize);
 
-  // FPS counter
-  game.fps = document.querySelector(game.fps);
-
 }
 
 // resize canvas to viewport
@@ -83,6 +99,9 @@ function defineSprites() {
   // initial random rocks
   game.rock = new Set();
   for (let r = 5; r > 0; r--) game.rock.add( new sprite.Rock(game) );
+
+  // explosions
+  game.explode = new Set();
 
   // user-controlled ship
   game.userShip = createShip();
@@ -128,18 +147,22 @@ function shoot(ship) {
 function main() {
 
   const fpsRecMax = 100;
-  let last = 0, fps = 0, fpsTot = 0, fpsRec = fpsRecMax;
-  loop();
+  let last = 0, fpsPrev = 0, fpsTot = 0, fpsRec = fpsRecMax;
+
+  rAF = requestAnimationFrame(loop);
 
   // main game look
   function loop(timer) {
 
-    if (last) {
+    let time = timer - (last || timer);
+    last = timer;
 
-      let time = 1000 / (timer - last);
+    if (time) {
+
+      let fps = 1000 / time;
 
       // FPS calculation
-      fpsTot += time;
+      fpsTot += fps;
       fpsRec--;
       if (fpsRec <= 0) {
 
@@ -147,9 +170,9 @@ function main() {
         fpsTot = 0;
         fpsRec = fpsRecMax;
 
-        if (fpsNow && fpsNow !== fps) {
-          fps = fpsNow;
-          game.fps.textContent = fps;
+        if (fpsNow && fpsNow !== fpsPrev) {
+          fpsPrev = fpsNow;
+          game.fps.textContent = fpsPrev;
         }
       }
 
@@ -160,22 +183,27 @@ function main() {
       canvasClear();
 
       // draw rocks
-      drawAll(game.rock, time);
+      drawAll(game.rock, fps);
 
       // draw user ship
-      game.userShip.draw(time);
+      game.userShip.draw(fps);
 
       // draw user bullets
-      drawAll(game.userShip.bullet, time);
+      drawAll(game.userShip.bullet, fps);
+
+      // draw explosions
+      drawAll(game.explode, fps);
 
       // detect user bullet/rock collision
-      sprite.collideSet(game.userShip.bullet, game.rock, userBulletRock);
+      sprite.collideSetUnique(game.userShip.bullet, game.rock, userBulletRock);
+
+      // detect user ship/rock collision
+      sprite.collideOne(game.userShip, game.rock, userShipRock);
 
     }
 
     // next frame
-    last = timer;
-    if (game.active) requestAnimationFrame(loop);
+    rAF = requestAnimationFrame(loop);
 
   }
 
@@ -198,6 +226,27 @@ function userBulletRock(bullet, rock) {
 
   game.userShip.bullet.delete(bullet);
   splitRock(rock);
+
+}
+
+
+// user's ship hits a rock
+function userShipRock(ship, rock) {
+
+  if (!ship.health) return;
+
+  ship.health -= rock.size;
+
+  if (ship.health <= 0) {
+    ship.health = 0;
+    ship.lifespan = 1000;
+    explode(ship);
+  }
+
+  game.health.value = ship.health;
+
+  splitRock(rock);
+  sound.play('explode');
 
 }
 
@@ -235,5 +284,33 @@ function splitRock(rock) {
   // remove rock
   game.rock.delete(rock);
   sound.play('explode');
+
+}
+
+
+// explode a sprite
+function explode(item, count = 10) {
+
+  do {
+
+    let r = new sprite.Rock(game);
+    r.setScale = 0.2;
+    r.lifespan = 5000;
+
+    r.x = item.x;
+    r.y = item.y;
+
+    r.lineColor = item.lineColor;
+    r.lineBlurColor = item.lineBlurColor;
+    r.fillColor = item.fillColor;
+
+    r.velX = (Math.random() - 0.5) * Math.random() * 8;
+    r.velY = (Math.random() - 0.5) * Math.random() * 8;
+
+    game.explode.add(r);
+
+    count--;
+
+  } while (count);
 
 }
