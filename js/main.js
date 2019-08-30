@@ -7,9 +7,14 @@ import * as sprite from './sprite.js';
 const game = {
   active: false,
   node: '#game',
+  start: '#start',
   health: '#health',
+  score: '#score span',
+  points: 0,
   fps: '#fps span',
-  toucharea: '#touch'
+  toucharea: '#touch',
+  hiscore: '#hiscore',
+  hipoints: parseInt(localStorage.getItem('hipoints') || 0, 10)
 };
 
 // requestAnimationFrame object
@@ -26,8 +31,16 @@ if ('serviceWorker' in navigator) {
 // initialise
 window.addEventListener('DOMContentLoaded', () => {
 
+  // start
+  game.start = document.querySelector(game.start);
+  game.start.addEventListener('click', gameNew);
+
   // health
   game.health = document.querySelector(game.health);
+
+  // scores
+  game.score = document.querySelector(game.score);
+  game.hiscore = document.querySelector(game.hiscore);
 
   // FPS counter
   game.fps = document.querySelector(game.fps);
@@ -36,20 +49,59 @@ window.addEventListener('DOMContentLoaded', () => {
 
   game.input = inputInit(document.querySelector(game.toucharea));
   sound.init();
-  defineSprites();
 
-  gameActive();
-
-  //pause/resume on tab visibility
   document.addEventListener('visibilitychange', gameActive, false);
 
-  function gameActive() {
-    if (rAF) cancelAnimationFrame(rAF);
-    game.active = (document.visibilityState === 'visible');
-    if (game.active) main();
-  }
+  gameOver();
 
 });
+
+
+//pause/resume on tab visibility
+function gameActive() {
+  if (rAF) cancelAnimationFrame(rAF);
+  game.active = (document.visibilityState === 'visible');
+  if (game.active) main();
+}
+
+
+// game over
+function gameOver() {
+
+  // update highscore
+  if (game.points > game.hipoints) {
+    game.hipoints = game.points;
+    localStorage.setItem('hipoints', game.hipoints);
+  }
+
+  game.hiscore.textContent = game.hipoints;
+  game.start.classList.add('active');
+
+}
+
+
+// restart
+function gameNew() {
+
+  game.start.classList.remove('active');
+  game.rockCount = 1;
+  updatePoints();
+  defineSprites();
+  game.health.value = game.userShip.health;
+  gameActive();
+
+}
+
+
+// update points
+function updatePoints(p) {
+
+  if (p) game.points += p;
+  else game.points = 0;
+
+  game.score.textContent = game.points;
+
+}
 
 
 // initialize canvas
@@ -96,9 +148,9 @@ function canvasClear() {
 // define initial sprites
 function defineSprites() {
 
-  // initial random rocks
+  // five random rocks
   game.rock = new Set();
-  for (let r = 5; r > 0; r--) game.rock.add( new sprite.Rock(game) );
+  createRocks();
 
   // explosions
   game.explode = new Set();
@@ -106,6 +158,19 @@ function defineSprites() {
   // user-controlled ship
   game.userShip = createShip();
   game.userShip.userControl = true;
+
+}
+
+
+// create rocks
+function createRocks(count) {
+
+  count = count || game.rockCount;
+
+  while (count > 0) {
+    game.rock.add(new sprite.Rock(game));
+    count--;
+  }
 
 }
 
@@ -224,6 +289,7 @@ function drawAll(set, time) {
 // user's bullet hits a rock
 function userBulletRock(bullet, rock) {
 
+  updatePoints(10 / rock.scale);
   game.userShip.bullet.delete(bullet);
   splitRock(rock);
 
@@ -236,11 +302,14 @@ function userShipRock(ship, rock) {
   if (!ship.health) return;
 
   ship.health -= rock.size;
+  ship.velX += rock.velX * rock.scale;
+  ship.velY += rock.velY * rock.scale;
 
   if (ship.health <= 0) {
     ship.health = 0;
-    ship.lifespan = 1000;
+    ship.lifespan = 300;
     explode(ship);
+    gameOver();
   }
 
   game.health.value = ship.health;
@@ -285,17 +354,25 @@ function splitRock(rock) {
   game.rock.delete(rock);
   sound.play('explode');
 
+  // any rocks left?
+  if (!game.rock.size) {
+    updatePoints(game.rockCount * 100);
+    game.rockCount++;
+    game.userShip.bulletMax++;
+    createRocks();
+  }
+
 }
 
 
 // explode a sprite
-function explode(item, count = 10) {
+function explode(item, count = 6) {
 
   do {
 
     let r = new sprite.Rock(game);
     r.setScale = 0.2;
-    r.lifespan = 5000;
+    r.lifespan = 3000;
 
     r.x = item.x;
     r.y = item.y;

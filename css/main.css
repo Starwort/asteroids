@@ -44,7 +44,7 @@ body::after {
   bottom: 0;
   left: 0;
   right: 0;
-  margin: 1vh auto;
+  margin: 1.5vh auto;
 /*
   // remove for pixelated scaling
   image-rendering: optimizeSpeed;
@@ -61,14 +61,41 @@ body::after {
   top: 0;
   left: 0;
   width: 100vw;
-  height: 1vh;
+  height: 1.5vh;
+}
+
+#score, #fps {
+  position: absolute;
+  bottom: 0.5em;
+  left: 0.5em;
+  font-size: 5vh;
+  color: #6f0;
 }
 
 #fps {
-  position: absolute;
-  bottom: 0.5em;
+  left: auto;
   right: 0.5em;
-  font-size: 0.85em;
+  font-size: 2.5vh;
+}
+
+#start {
+  display: none;
+  position: absolute;
+  width: 8em;
+  height: 5em;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  margin: auto;
+  font-size: 6vmin;
+  text-align: center;
+  color: #6f0;
+  cursor: pointer;
+}
+
+#start.active {
+  display: block;
 }
 
 #touch {
@@ -82,9 +109,10 @@ body::after {
 #touch div {
   display: none;
   position: absolute;
-  width: 10vmax;
-  height: 10vmax;
-  border: 2px solid rgba(255,255,255,0.3);
+  width: 12vh;
+  height: 12vh;
+  border-width: 3px;
+  border-style: solid;
   border-radius: 50%;
 }
 
@@ -93,21 +121,25 @@ body::after {
 }
 
 #left {
-  left: 2vmax;
-  bottom: 13vmax;
+  left: 1vh;
+  bottom: 19vh;
+  border: 3px solid rgba(255,255,255,0.3);
 }
 
 #right {
-  left: 8vmax;
-  bottom: 2vmax;
+  left: 6vh;
+  bottom: 8vh;
+  border: 3px solid rgba(255,255,255,0.3);
 }
 
 #up {
-  right: 2vmax;
-  bottom: 13vmax;
+  right: 1vh;
+  bottom: 19vh;
+  border: 6px solid rgba(255,0,0,0.3);
 }
 
 #down {
-  right: 8vmax;
-  bottom: 2vmax;
+  right: 6vh;
+  bottom: 8vh;
+  border: 6px solid rgba(60,255,60,0.3);
 }

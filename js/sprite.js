@@ -41,7 +41,7 @@ class Sprite {
 
     // rotation acceleration and deceleration
     this.dirRot = 0;
-    this.dirRotAcc = 0.4;
+    this.dirRotAcc = 0.5;
     this.dirRotMax = 0.4;
     this.dirRotDec = 0.25;
 
@@ -65,14 +65,15 @@ class Sprite {
   // set relative scale
   set setScale(relative) {
     this.scale = relative;
-    this.boundX = this.maxX + this.size * this.scale;
-    this.boundY = this.maxY + this.size * this.scale;
+    this.scaleFactor = this.size * this.scale;
+    this.boundX = this.maxX + this.scaleFactor;
+    this.boundY = this.maxY + this.scaleFactor;
     this.setCollide = 1;
   }
 
   // collide radius
   set setCollide(r = 1) {
-    this.collide = this.size * this.scale * r;
+    this.collide = this.scaleFactor * r;
   }
 
   // move sprite
@@ -80,7 +81,7 @@ class Sprite {
 
     // reduce lifespan
     if (this.lifespan) {
-      this.lifespan -= time;
+      this.lifespan -= 1000 / time;
       if (this.lifespan <= 0) {
         this.lifespan = 0;
         this.alive = false;
@@ -168,7 +169,7 @@ class Sprite {
     else this.fillStep = 0;
 
     // alpha
-    ctx.globalAlpha = this.lifespan && this.lifespan < 1000 ? this.lifespan / 1000 : 1;
+    ctx.globalAlpha = this.lifespan !== null && this.lifespan < 1000 ? this.lifespan / 1000 : 1;
 
     // draw
     ctx.beginPath();
@@ -178,7 +179,7 @@ class Sprite {
 
       let
         r = this.shape[p][0] * Math.PI + this.dir,
-        s = this.shape[p][1] * this.size * this.scale,
+        s = this.shape[p][1] * this.scaleFactor,
         x = Math.cos(r) * s + this.x,
         y = Math.sin(r) * s + this.y;
 
@@ -253,13 +254,13 @@ export class Bullet extends Sprite {
 
     // position and velocity
     this.dir = ship.dir;
-    this.x = ship.x + Math.cos(ship.dir) * ship.size * ship.scale;
-    this.y = ship.y + Math.sin(ship.dir) * ship.size * ship.scale;
+    this.x = ship.x + Math.cos(ship.dir) * ship.scaleFactor;
+    this.y = ship.y + Math.sin(ship.dir) * ship.scaleFactor;
 
     this.velX = Math.cos(this.dir) * 10;
     this.velY = Math.sin(this.dir) * 10;
     this.velDec = 2;
-    this.lifespan = 3000;
+    this.lifespan = 1000;
 
     // radian (pi multiples) and radius pairs
     this.shape = [
