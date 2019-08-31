@@ -1,5 +1,6 @@
 /* main game */
 import * as lib from './lib.js';
+import { canvasInit } from './canvas.js';
 import { inputInit } from './input.js';
 import * as sound from './sound.js';
 import * as sprite from './sprite.js';
@@ -14,7 +15,8 @@ const game = {
   fps: '#fps span',
   toucharea: '#touch',
   hiscore: '#hiscore',
-  hipoints: parseInt(localStorage.getItem('hipoints') || 0, 10)
+  hipoints: parseInt(localStorage.getItem('hipoints') || 0, 10),
+  powers: ['shield', 'shots', 'spread']
 };
 
 // requestAnimationFrame object
@@ -45,27 +47,23 @@ window.addEventListener('DOMContentLoaded', () => {
   // FPS counter
   game.fps = document.querySelector(game.fps);
 
-  canvasInit();
+  // canvas
+  canvasInit(game);
 
+  // game input
   game.input = inputInit(document.querySelector(game.toucharea));
   sound.init();
 
+  // tab active handler
   document.addEventListener('visibilitychange', gameActive, false);
 
+  // click to start
   gameOver();
 
 });
 
 
-//pause/resume on tab visibility
-function gameActive() {
-  if (rAF) cancelAnimationFrame(rAF);
-  game.active = (document.visibilityState === 'visible');
-  if (game.active) main();
-}
-
-
-// game over
+// show game over
 function gameOver() {
 
   // update highscore
@@ -80,7 +78,7 @@ function gameOver() {
 }
 
 
-// restart
+// start new game
 function gameNew() {
 
   game.start.classList.remove('active');
@@ -90,6 +88,14 @@ function gameNew() {
   game.health.value = game.userShip.health;
   gameActive();
 
+}
+
+
+//pause/resume on tab visibility
+function gameActive() {
+  if (rAF) cancelAnimationFrame(rAF);
+  game.active = (document.visibilityState === 'visible');
+  if (game.active) main();
 }
 
 
@@ -104,44 +110,22 @@ function updatePoints(p) {
 }
 
 
-// initialize canvas
-function canvasInit() {
+// update shield
+function updateShield(ship, s) {
 
-  game.canvas = document.querySelector(game.node);
-  game.width = game.canvas.width;
-  game.height = game.canvas.height;
-  game.maxX = game.width / 2;
-  game.maxY = game.width / 2;
-  game.ratio = game.width / game.height;
+  if (!ship.health) return;
 
-  game.spriteSize = Math.ceil(game.width / 30);
+  ship.health = Math.min(100, ship.health + s);
 
-  game.ctx = game.canvas.getContext('2d');
+  if (ship.health <= 0) {
+    ship.health = 0;
+    ship.lifespan = 300;
+    explode(ship);
+    gameOver();
+  }
 
-  // 0,0 at middle
-  game.ctx.translate(game.width / 2, game.height / 2);
+  game.health.value = ship.health;
 
-  // size to viewport
-  canvasClear();
-  canvasResize();
-  lib.eventDebounce(window, 'resize', canvasResize);
-
-}
-
-// resize canvas to viewport
-function canvasResize() {
-
-  let b = document.body;
-  game.scale = Math.min(b.clientWidth / game.width, b.clientHeight / game.height);
-
-  game.canvas.style.width = game.width * game.scale + 'px';
-  game.canvas.style.height = game.height * game.scale + 'px';
-
-}
-
-// clear canvas
-function canvasClear() {
-  game.ctx.clearRect(-game.maxX, -game.maxY, game.width, game.height);
 }
 
 
@@ -158,6 +142,9 @@ function defineSprites() {
   // user-controlled ship
   game.userShip = createShip();
   game.userShip.userControl = true;
+
+  // power up
+  game.powerUp = null;
 
 }
 
@@ -182,7 +169,8 @@ function createShip(line = '#6f0', blur = '#6f0', fill = '#131') {
 
   // bullet set
   ship.bullet = new Set();
-  ship.bulletMax = 3;
+  ship.bulletMax = 1;
+  ship.bulletDist = 800;
   ship.bulletFire = false;
 
   ship.lineColor = line;
@@ -190,6 +178,15 @@ function createShip(line = '#6f0', blur = '#6f0', fill = '#131') {
   ship.fillColor = fill;
 
   return ship;
+
+}
+
+
+// create random power-up
+function createPowerup() {
+
+  if (Math.random() < 0.999) return null;
+  return new sprite.PowerUp(game, game.powers[lib.randomInt(0, game.powers.length - 1)], (Math.random() > 0.4 ? 1 : -1));
 
 }
 
@@ -202,7 +199,7 @@ function shoot(ship) {
   ship.bulletFire = !!game.input.up;
   if (ship.bulletFire) {
     sound.play('shoot');
-    ship.bullet.add( new sprite.Bullet(game, ship) );
+    ship.bullet.add( new sprite.Bullet(game, ship, ship.bulletDist) );
   }
 
 }
@@ -244,8 +241,8 @@ function main() {
       // create shots
       shoot(game.userShip);
 
-      // draw canvas
-      canvasClear();
+      // clear canvas
+      game.ctx.clearRect(-game.maxX, -game.maxY, game.width, game.height);
 
       // draw rocks
       drawAll(game.rock, fps);
@@ -264,6 +261,28 @@ function main() {
 
       // detect user ship/rock collision
       sprite.collideOne(game.userShip, game.rock, userShipRock);
+
+      // powerup
+      if (game.powerUp) {
+
+        game.powerUp.draw(fps);
+
+        // detect user bullet/powerup collision
+        sprite.collideOne(game.powerUp, game.userShip.bullet, userBulletPowerUp);
+
+        // detect user ship/powerup collision
+        if (sprite.collision(game.userShip, game.powerUp)) userShipPowerUp(game.userShip, game.powerUp);
+
+        // powerup gone
+        if (!game.powerUp.alive) game.powerUp = null;
+
+      }
+      else {
+
+        // create a random powerup
+        game.powerUp = createPowerup();
+
+      }
 
     }
 
@@ -295,27 +314,53 @@ function userBulletRock(bullet, rock) {
 
 }
 
+// user's bullet hits a powerup
+function userBulletPowerUp(powerup, bullet) {
+
+  if (!powerup.inc) updatePoints(100);
+  powerup.inc = 0;
+  powerup.lifespan = 300;
+  game.userShip.bullet.delete(bullet);
+
+}
+
+// user's ship hits a powerup
+function userShipPowerUp(ship, powerup) {
+
+  if (powerup.inc) {
+    sound.play(powerup.inc > 0 ? 'powerup' : 'powerdown');
+  }
+
+  switch (powerup.text) {
+
+    case 'shield':
+      updateShield(ship, 20 * powerup.inc);
+      break;
+
+    case 'shots':
+      ship.bulletMax = Math.min(Math.max(1, ship.bulletMax + powerup.inc), 10);
+      break;
+
+    case 'spread':
+      ship.bulletDist = Math.min(Math.max(500, ship.bulletDist + (powerup.inc * 100)), 2000);
+      break;
+
+  }
+
+  powerup.lifespan = 100;
+  powerup.inc = 0;
+
+}
+
 
 // user's ship hits a rock
 function userShipRock(ship, rock) {
 
-  if (!ship.health) return;
+  updateShield(ship, -rock.size);
 
-  ship.health -= rock.size;
   ship.velX += rock.velX * rock.scale;
   ship.velY += rock.velY * rock.scale;
-
-  if (ship.health <= 0) {
-    ship.health = 0;
-    ship.lifespan = 300;
-    explode(ship);
-    gameOver();
-  }
-
-  game.health.value = ship.health;
-
   splitRock(rock);
-  sound.play('explode');
 
 }
 
@@ -358,7 +403,6 @@ function splitRock(rock) {
   if (!game.rock.size) {
     updatePoints(game.rockCount * 100);
     game.rockCount++;
-    game.userShip.bulletMax++;
     createRocks();
   }
 
@@ -389,5 +433,7 @@ function explode(item, count = 6) {
     count--;
 
   } while (count);
+
+  sound.play('explode');
 
 }

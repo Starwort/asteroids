@@ -26,6 +26,9 @@ class Sprite {
     // shape
     this.shape = [];
 
+    // inner text
+    this.text = '';
+
     // initial position
     this.x = 0;
     this.y = 0;
@@ -199,6 +202,12 @@ class Sprite {
     // fill style (last)
     if (this.fillStep === 2) ctx.fill();
 
+    // text
+    if (this.text) {
+      ctx.fillStyle = this.lineColor;
+      ctx.fillText(this.text, this.x, this.y);
+    }
+
   }
 
 }
@@ -238,7 +247,7 @@ export class Ship extends Sprite {
 // bullet
 export class Bullet extends Sprite {
 
-  constructor(game, ship) {
+  constructor(game, ship, distance) {
 
     super(game);
     this.type = 'bullet';
@@ -260,13 +269,71 @@ export class Bullet extends Sprite {
     this.velX = Math.cos(this.dir) * 10;
     this.velY = Math.sin(this.dir) * 10;
     this.velDec = 2;
-    this.lifespan = 1000;
+    this.lifespan = distance;
 
     // radian (pi multiples) and radius pairs
     this.shape = [
       [0, 1],
       [1, 1]
     ];
+
+  }
+
+}
+
+
+// power-up
+export class PowerUp extends Sprite {
+
+  constructor(game, text, inc) {
+
+    super(game);
+    this.type = 'powerup';
+    this.text = text;
+    this.inc = inc;
+    this.setScale = 1.75;
+    this.setCollide = 0.6;
+    this.lifespan = 10000;
+
+    // style
+    if (this.inc > 0) {
+      this.lineColor = '#6c0';
+      this.lineBlurColor = '#6c0';
+    }
+    else {
+      this.lineColor = '#f66';
+      this.lineBlurColor = '#f66';
+    }
+    this.lineBlur = 5;
+    this.fillColor = '';
+
+    // random position
+    let
+      rPos = Math.ceil((Math.random() - 0.5) * 2 * this.maxX),
+      fPos = Math.random < 0.5 ? -this.boundX : this.boundX;
+
+    if (Math.random() < 0.5) {
+      this.x = rPos;
+      this.y = fPos;
+    }
+    else {
+      this.x = fPos;
+      this.y = rPos;
+    }
+
+    // rotate
+    this.dirRot = 0.02;
+    this.dirRotDec = 0;
+
+    // velocity acceleration and deceleration
+    this.velX = (lib.randomInt(0, 1) - 0.5) * 3;
+    this.velY = (lib.randomInt(0, 1) - 0.5) * 3;
+    this.velDec = 0;
+
+    // radian (pi multiples) and radius pairs
+    this.shape = [];
+    const sides = 7;
+    for (let i = 0; i <= sides; i++) this.shape.push([4/sides * i ,1]);
 
   }
 

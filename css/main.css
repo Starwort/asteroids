@@ -79,7 +79,7 @@ body::after {
 }
 
 #start {
-  display: none;
+  transform: scale(0);
   position: absolute;
   width: 8em;
   height: 5em;
@@ -92,10 +92,11 @@ body::after {
   text-align: center;
   color: #6f0;
   cursor: pointer;
+  transition: transform 1s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 #start.active {
-  display: block;
+  transform: scale(1);
 }
 
 #touch {
@@ -109,8 +110,8 @@ body::after {
 #touch div {
   display: none;
   position: absolute;
-  width: 12vh;
-  height: 12vh;
+  width: 12vmax;
+  height: 12vmax;
   border-width: 3px;
   border-style: solid;
   border-radius: 50%;
@@ -121,25 +122,25 @@ body::after {
 }
 
 #left {
-  left: 1vh;
-  bottom: 19vh;
+  left: 1vmax;
+  bottom: calc(8vh + 12vmax);
   border: 3px solid rgba(255,255,255,0.3);
 }
 
 #right {
-  left: 6vh;
+  left: 6vmax;
   bottom: 8vh;
   border: 3px solid rgba(255,255,255,0.3);
 }
 
 #up {
-  right: 1vh;
-  bottom: 19vh;
-  border: 6px solid rgba(255,0,0,0.3);
+  right: 1vmax;
+  bottom: calc(8vh + 12vmax);
+  border: 6px solid rgba(255,0,0,0.4);
 }
 
 #down {
-  right: 6vh;
+  right: 6vmax;
   bottom: 8vh;
-  border: 6px solid rgba(60,255,60,0.3);
+  border: 6px solid rgba(60,255,60,0.4);
 }

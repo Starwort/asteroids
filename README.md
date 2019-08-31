@@ -5,7 +5,6 @@ HTML5 multi-player Asteroids. A work-in-progress mostly to demonstrate ES6, canv
 Work in progress. To do:
 
 * slow framerate animation
-* sound on mobile devices
 * gamepad support
 * multiplayer
 

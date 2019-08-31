@@ -1,7 +1,7 @@
 /* sound effect handler */
 const
   sound = {},
-  effect = ['shoot', 'explode'];
+  effect = ['shoot', 'explode', 'powerup', 'powerdown'];
 
 
 // initialise sounds
