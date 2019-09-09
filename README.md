@@ -7,11 +7,9 @@ Work in progress. To do:
 * slow framerate animation
 * gamepad support
 * multiplayer
-
+* object serialisation: one player becomes the master and transmits all game data on init? Alternatively, players receive events over time.
 
 power-ups:
 
-* increase/decrease ship size, shield, speed, bullet count, bullet speed, bullet size
-* invulnerability (a few seconds at start)
+* increase/decrease bullet size
 * rapid fire (no button release)
-* reverse screen (CSS transform)

@@ -16,11 +16,13 @@ const game = {
   toucharea: '#touch',
   hiscore: '#hiscore',
   hipoints: parseInt(localStorage.getItem('hipoints') || 0, 10),
-  powers: ['shield', 'shots', 'spread']
+  powers: ['shots', 'shield', 'speed', 'size', 'strong', 'spread'],
+  powerChanceMin: 0.5
 };
 
-// requestAnimationFrame object
-let rAF;
+let
+  rAF,        // requestAnimationFrame object
+  fireStart;  // fire to start interval
 
 // fake service worker
 if ('serviceWorker' in navigator) {
@@ -75,14 +77,23 @@ function gameOver() {
   game.hiscore.textContent = game.hipoints;
   game.start.classList.add('active');
 
+  // press fire to start
+  fireStart = setInterval(() => {
+    if (game.input.up) gameNew();
+  }, 300);
+
 }
 
 
 // start new game
 function gameNew() {
 
+  clearInterval(fireStart);
   game.start.classList.remove('active');
-  game.rockCount = 1;
+
+  game.level = 1;
+  game.powerChance = game.powerChanceMin;
+
   updatePoints();
   defineSprites();
   game.health.value = game.userShip.health;
@@ -139,12 +150,13 @@ function defineSprites() {
   // explosions
   game.explode = new Set();
 
+  // power ups
+  game.powerUp = new Set();
+
   // user-controlled ship
   game.userShip = createShip();
   game.userShip.userControl = true;
-
-  // power up
-  game.powerUp = null;
+  game.userShip.strong = 5000;
 
 }
 
@@ -152,7 +164,7 @@ function defineSprites() {
 // create rocks
 function createRocks(count) {
 
-  count = count || game.rockCount;
+  count = count || game.level;
 
   while (count > 0) {
     game.rock.add(new sprite.Rock(game));
@@ -178,15 +190,6 @@ function createShip(line = '#6f0', blur = '#6f0', fill = '#131') {
   ship.fillColor = fill;
 
   return ship;
-
-}
-
-
-// create random power-up
-function createPowerup() {
-
-  if (Math.random() < 0.999) return null;
-  return new sprite.PowerUp(game, game.powers[lib.randomInt(0, game.powers.length - 1)], (Math.random() > 0.4 ? 1 : -1));
 
 }
 
@@ -250,6 +253,9 @@ function main() {
       // draw user ship
       game.userShip.draw(fps);
 
+      // draw power-ups
+      drawAll(game.powerUp, fps);
+
       // draw user bullets
       drawAll(game.userShip.bullet, fps);
 
@@ -259,28 +265,13 @@ function main() {
       // detect user bullet/rock collision
       sprite.collideSetUnique(game.userShip.bullet, game.rock, userBulletRock);
 
-      // detect user ship/rock collision
-      sprite.collideOne(game.userShip, game.rock, userShipRock);
-
-      // powerup
-      if (game.powerUp) {
-
-        game.powerUp.draw(fps);
-
-        // detect user bullet/powerup collision
-        sprite.collideOne(game.powerUp, game.userShip.bullet, userBulletPowerUp);
+      if (game.userShip.alive) {
 
         // detect user ship/powerup collision
-        if (sprite.collision(game.userShip, game.powerUp)) userShipPowerUp(game.userShip, game.powerUp);
+        sprite.collideOne(game.userShip, game.powerUp, userShipPowerUp);
 
-        // powerup gone
-        if (!game.powerUp.alive) game.powerUp = null;
-
-      }
-      else {
-
-        // create a random powerup
-        game.powerUp = createPowerup();
+        // detect user ship/rock collision
+        sprite.collideOne(game.userShip, game.rock, userShipRock);
 
       }
 
@@ -314,35 +305,43 @@ function userBulletRock(bullet, rock) {
 
 }
 
-// user's bullet hits a powerup
-function userBulletPowerUp(powerup, bullet) {
-
-  if (!powerup.inc) updatePoints(100);
-  powerup.inc = 0;
-  powerup.lifespan = 300;
-  game.userShip.bullet.delete(bullet);
-
-}
 
 // user's ship hits a powerup
 function userShipPowerUp(ship, powerup) {
 
-  if (powerup.inc) {
-    sound.play(powerup.inc > 0 ? 'powerup' : 'powerdown');
-  }
+  let inc = powerup.inc;
+
+  if (inc) sound.play(inc > 0 ? 'powerup' : 'powerdown');
 
   switch (powerup.text) {
 
     case 'shield':
-      updateShield(ship, 20 * powerup.inc);
+      updateShield(ship, 50 * inc);
       break;
 
     case 'shots':
-      ship.bulletMax = Math.min(Math.max(1, ship.bulletMax + powerup.inc), 10);
+      ship.bulletMax = Math.min(Math.max(1, ship.bulletMax + inc), 10);
       break;
 
     case 'spread':
-      ship.bulletDist = Math.min(Math.max(500, ship.bulletDist + (powerup.inc * 100)), 2000);
+      ship.bulletDist = Math.min(Math.max(500, ship.bulletDist + (inc * 100)), 1500);
+      break;
+
+    case 'speed':
+      ship.dirRotAcc += inc * 0.1;
+      ship.dirRotMax += inc * 0.1;
+      ship.dirRotDec += inc * 0.05;
+      ship.velAcc += inc * 2;
+      ship.velMax += inc * 2;
+      ship.velDec += inc * 0.2;
+      break;
+
+    case 'size':
+      ship.setScale = Math.min(Math.max(0.5, ship.scale - (inc * 0.15)), 2);
+      break;
+
+    case 'strong':
+      ship.strong += 8000;
       break;
 
   }
@@ -356,10 +355,11 @@ function userShipPowerUp(ship, powerup) {
 // user's ship hits a rock
 function userShipRock(ship, rock) {
 
-  updateShield(ship, -rock.size);
+  if (!ship.strong) updateShield(ship, -rock.size);
 
   ship.velX += rock.velX * rock.scale;
   ship.velY += rock.velY * rock.scale;
+
   splitRock(rock);
 
 }
@@ -384,14 +384,17 @@ function splitRock(rock) {
       r.x = rock.x;
       r.y = rock.y;
 
-      r.velX = (Math.random() - 0.5) * (2.5 / scale);
-      r.velY = (Math.random() - 0.5) * (2.5 / scale);
+      r.velX = (lib.random() - 0.5) * (2.5 / scale);
+      r.velY = (lib.random() - 0.5) * (2.5 / scale);
 
       game.rock.add(r);
 
       rockNew--;
 
     } while (rockNew);
+
+    // add power-up
+    addPowerUp(rock);
 
   }
 
@@ -401,10 +404,39 @@ function splitRock(rock) {
 
   // any rocks left?
   if (!game.rock.size) {
-    updatePoints(game.rockCount * 100);
-    game.rockCount++;
+    updatePoints(game.level * 100);
+    game.level++;
+    game.userShip.strong = 5000;
     createRocks();
   }
+
+}
+
+
+// random new power-up
+function addPowerUp(item) {
+
+  // increase chance if no power-up
+  if (lib.random() > game.powerChance) {
+    game.powerChance += 0.1;
+    return;
+  }
+
+  // reset power-up chance
+  game.powerChance = game.powerChanceMin;
+
+  let pu = new sprite.PowerUp(game, game.powers[lib.randomInt(0, Math.min(game.level, game.powers.length - 1))], (game.level < 3 || lib.random() > 0.1 ? 1 : -1));
+
+  // invulnerable always increments
+  if (pu.text === 'strong') pu.inc = 1;
+
+  // inherit location
+  if (item) {
+    pu.x = item.x;
+    pu.y = item.y;
+  }
+
+  game.powerUp.add(pu);
 
 }
 

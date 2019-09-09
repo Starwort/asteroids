@@ -19,6 +19,7 @@ class Sprite {
     this.alive = true;
     this.health = null;
     this.lifespan = null;
+    this.strong = null;
 
     // is user-controlled?
     this.userControl = false;
@@ -89,6 +90,12 @@ class Sprite {
         this.lifespan = 0;
         this.alive = false;
       }
+    }
+
+    // reduce invulnerability
+    if (this.strong) {
+      this.strong -= 1000 / time;
+      if (this.strong <= 0) this.strong = 0;
     }
 
     // rotate
@@ -166,7 +173,7 @@ class Sprite {
 
     // fill colour
     if (this.fillColor) {
-      ctx.fillStyle = this.fillColor;
+      ctx.fillStyle = this.strong && this.strongColor ? this.strongColor : this.fillColor;
       this.fillStep = this.fillStep || 1;
     }
     else this.fillStep = 0;
@@ -226,6 +233,9 @@ export class Ship extends Sprite {
     this.lineColor = '#6f0';
     this.lineBlurColor = '#6f0';
     this.fillColor = '#131';
+
+    // invulnerable color
+    this.strongColor = '#9f9';
 
     // radian (pi multiples) and radius pairs
     this.shape = [
