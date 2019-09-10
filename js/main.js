@@ -1,7 +1,7 @@
 /* main game */
 import * as lib from './lib.js';
 import { canvasInit } from './canvas.js';
-import { inputInit } from './input.js';
+import { inputInit, inputGamepad } from './input.js';
 import * as sound from './sound.js';
 import * as sprite from './sprite.js';
 
@@ -79,6 +79,7 @@ function gameOver() {
 
   // press fire to start
   fireStart = setInterval(() => {
+    inputGamepad();
     if (game.input.up) gameNew();
   }, 300);
 
@@ -106,7 +107,7 @@ function gameNew() {
 function gameActive() {
   if (rAF) cancelAnimationFrame(rAF);
   game.active = (document.visibilityState === 'visible');
-  if (game.active) main();
+  if (game.active && game.level) main();
 }
 
 
@@ -241,6 +242,9 @@ function main() {
         }
       }
 
+      // gamepad input
+      inputGamepad();
+
       // create shots
       shoot(game.userShip);
 
@@ -341,7 +345,7 @@ function userShipPowerUp(ship, powerup) {
       break;
 
     case 'strong':
-      ship.strong += 8000;
+      ship.strong = 8000;
       break;
 
   }
@@ -384,8 +388,8 @@ function splitRock(rock) {
       r.x = rock.x;
       r.y = rock.y;
 
-      r.velX = (lib.random() - 0.5) * (2.5 / scale);
-      r.velY = (lib.random() - 0.5) * (2.5 / scale);
+      r.velX = (Math.random() - 0.5) * (2.5 / scale);
+      r.velY = (Math.random() - 0.5) * (2.5 / scale);
 
       game.rock.add(r);
 
@@ -405,6 +409,7 @@ function splitRock(rock) {
   // any rocks left?
   if (!game.rock.size) {
     updatePoints(game.level * 100);
+    updateShield(game.userShip, 50);
     game.level++;
     game.userShip.strong = 5000;
     createRocks();
@@ -416,16 +421,16 @@ function splitRock(rock) {
 // random new power-up
 function addPowerUp(item) {
 
-  // increase chance if no power-up
-  if (lib.random() > game.powerChance) {
-    game.powerChance += 0.1;
+  // no power-up if two active or random chance
+  if (game.powerUp.size > 1 || Math.random() > game.powerChance) {
+    game.powerChance += 0.1; // increase chance of new power-up
     return;
   }
 
   // reset power-up chance
   game.powerChance = game.powerChanceMin;
 
-  let pu = new sprite.PowerUp(game, game.powers[lib.randomInt(0, Math.min(game.level, game.powers.length - 1))], (game.level < 3 || lib.random() > 0.1 ? 1 : -1));
+  let pu = new sprite.PowerUp(game, game.powers[lib.randomInt(0, Math.min(game.level, game.powers.length - 1))], (game.level < 3 || Math.random() > 0.1 ? 1 : -1));
 
   // invulnerable always increments
   if (pu.text === 'strong') pu.inc = 1;

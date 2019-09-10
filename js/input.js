@@ -13,7 +13,16 @@ const
     87: 'up',
     40: 'down',
     83: 'down'
-  };
+  },
+
+  // gamepad defaults
+  gpDef = {};
+
+let
+  gamepad = false,      // gamepad active
+  gpSensitivity = 10,   // gamepad sensitivity
+  gpAxesSet = false,    // gamepad axes used
+  gpButtSet = false;    // gamepad button used
 
 
 // initialise input
@@ -25,26 +34,114 @@ export function inputInit(toucharea) {
   window.addEventListener('keydown', keyHandler);
   window.addEventListener('keyup', keyHandler);
 
+  // mouse events
+  window.addEventListener('mousemove', mouseMoveHandler);
+  window.addEventListener('mousedown', mouseButtonHandler);
+  window.addEventListener('mouseup', mouseButtonHandler);
+
   // touch events
   if (toucharea) {
     input.touchactive = false;
     input.toucharea = toucharea;
     toucharea.addEventListener('touchstart', touchHandler);
     toucharea.addEventListener('touchend', touchHandler);
+
+    // pointer lock
+    document.addEventListener('click', () => {
+      toucharea.requestPointerLock();
+    });
   }
+
+  // gamepad connection
+  window.addEventListener('gamepadconnected', () => {
+
+    gamepad = true;
+    let gp = navigator.getGamepads()[0];
+    gpDef.axes = [];
+    gp.axes.forEach((v, i) => gpDef.axes[i] = Math.round(v * gpSensitivity));
+
+  });
+
+  window.addEventListener('gamepaddisconnected', () => gamepad = false);
 
   return input;
 
 }
 
 
+// gamepad input
+export function inputGamepad() {
+
+  if (!gamepad || !navigator.getGamepads || !navigator.getGamepads().length) return;
+
+  // first axes on first gamepad
+  let
+    gp = navigator.getGamepads()[0],
+    ax = Math.round(gp.axes[0] * gpSensitivity),
+    ad = gpDef.axes[0];
+
+  if (ax === ad) {
+    if (gpAxesSet) {
+      resetLeftRight();
+      gpAxesSet = false;
+    }
+  }
+  else {
+    input.left = ax < ad ? 1 : 0;
+    input.right = 1 - input.left;
+    gpAxesSet = true;
+  }
+
+  // check all buttons
+  let bt = [0,0];
+  gp.buttons.forEach((b, i) => bt[i % 2] |= b.value);
+
+  if (!bt[0] && !bt[1]) {
+    if (gpButtSet) {
+      resetUpDown();
+      gpButtSet = false;
+    }
+  }
+  else {
+    input.up = bt[0];
+    input.down = bt[1];
+    gpButtSet = true;
+  }
+
+}
+
+
 // keyboard handler
 function keyHandler(e) {
-  let
-    down = (e.type === 'keydown' ? 1 : 0),
-    k = key[e.keyCode];
 
-  if (k) input[k] = down;
+  let k = key[e.keyCode];
+  if (k) input[k] = (e.type === 'keydown' ? 1 : 0);
+
+}
+
+
+// mouse movement handler
+let mouseMoveTimeout;
+function mouseMoveHandler(e) {
+
+  clearTimeout(mouseMoveTimeout);
+  resetLeftRight();
+
+  let mx = e.movementX;
+  if (mx) input[mx < 0 ? 'left' : 'right'] = 1;
+
+  mouseMoveTimeout = setTimeout(resetLeftRight, 20);
+
+}
+
+
+// mouse button handler
+function mouseButtonHandler(e) {
+
+  e.preventDefault();
+  let b = e.button === 0 ? 'up' : e.button === 2 ? 'down' : null;
+  if (b) input[b] = (e.type === 'mousedown' ? 1 : 0);
+
 }
 
 
@@ -56,13 +153,25 @@ function touchHandler(e) {
     input.toucharea.classList.add('active');
   }
 
-  let
-    down = (e.type === 'touchstart' ? 1 : 0),
-    point = e.changedTouches;
+  let point = e.changedTouches;
 
   for (let p = 0; p < point.length; p++) {
     let t = point[p].target.dataset.input;
-    if (t) input[t] = down;
+    if (t) input[t] = (e.type === 'touchstart' ? 1 : 0);
   }
 
+}
+
+
+// reset left and right
+function resetLeftRight() {
+  input.left = 0;
+  input.right = 0;
+}
+
+
+// reset up and down
+function resetUpDown() {
+  input.up = 0;
+  input.down = 0;
 }

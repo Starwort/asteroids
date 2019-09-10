@@ -173,7 +173,7 @@ class Sprite {
 
     // fill colour
     if (this.fillColor) {
-      ctx.fillStyle = this.strong && this.strongColor ? this.strongColor : this.fillColor;
+      ctx.fillStyle = this.strong && this.strongColor && (this.strong > 1000 || Math.round(this.strong) % 3 === 0) ? this.strongColor : this.fillColor;
       this.fillStep = this.fillStep || 1;
     }
     else this.fillStep = 0;

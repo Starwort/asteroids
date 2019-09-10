@@ -39,7 +39,7 @@ export function eventThrottle(element, event, callback, delay) {
 
 // random integer between lo and hi
 export function randomInt(lo, hi) {
-  return Math.floor(random() * (hi - lo + 1)) + lo;
+  return Math.floor(Math.random() * (hi - lo + 1)) + lo;
 }
 
 
