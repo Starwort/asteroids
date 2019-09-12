@@ -57,7 +57,7 @@ class Sprite {
     this.velDec = 2;
 
     // styles
-    this.lineWidth = Math.ceil(this.maxX / 200);
+    this.lineWidth = Math.ceil(this.maxX / game.scale / 150);
     this.lineColor = '#fff';
     this.lineBlur = Math.floor(this.lineWidth * 1.5);
     this.lineBlurColor = this.lineColor;
@@ -359,7 +359,7 @@ export class Rock extends Sprite {
     this.type = 'rock';
 
     // style
-    let c = lib.randomInt(6, 15).toString(16);
+    let c = lib.randomInt(8, 15).toString(16);
     c = `#${c + c + c}`;
 
     this.setScale = 2;

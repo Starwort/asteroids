@@ -11,9 +11,10 @@ const game = {
   start: '#start',
   health: '#health',
   score: '#score span',
+  fullscreen: '#fullscreen',
   points: 0,
   fps: '#fps span',
-  toucharea: '#touch',
+  controlarea: '#control',
   hiscore: '#hiscore',
   hipoints: parseInt(localStorage.getItem('hipoints') || 0, 10),
   powers: ['shots', 'shield', 'speed', 'size', 'strong', 'spread'],
@@ -24,9 +25,10 @@ let
   rAF,        // requestAnimationFrame object
   fireStart;  // fire to start interval
 
-// fake service worker
+
+// service worker
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('../sw.js', { scope: '../'})
+  navigator.serviceWorker.register('sw.js', { scope: './'})
     .then(() => {})
     .catch(() => {});
 }
@@ -49,11 +51,14 @@ window.addEventListener('DOMContentLoaded', () => {
   // FPS counter
   game.fps = document.querySelector(game.fps);
 
+  // full screen
+  game.fullscreen = document.querySelector(game.fullscreen);
+
   // canvas
   canvasInit(game);
 
   // game input
-  game.input = inputInit(document.querySelector(game.toucharea));
+  game.input = inputInit(document.querySelector(game.controlarea));
   sound.init();
 
   // tab active handler

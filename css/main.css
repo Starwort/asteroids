@@ -12,6 +12,10 @@
   padding: 0;
   margin: 0;
   line-height: 1;
+  overflow: hidden;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  user-select: none;
 }
 
 html, body {
@@ -22,12 +26,11 @@ html, body {
   font-weight: 300;
   color: #eee;
   background-color: #222;
-  overflow: hidden;
 }
 
 body::after {
   content: '';
-  position: absolute;
+  position: fixed;
   left: 0;
   right: 0;
   top: 0;
@@ -39,7 +42,7 @@ body::after {
 }
 
 #game {
-  position: absolute;
+  position: fixed;
   top: 0;
   bottom: 0;
   left: 0;
@@ -57,7 +60,7 @@ body::after {
 }
 
 #health {
-  position: absolute;
+  position: fixed;
   top: 0;
   left: 0;
   width: 100vw;
@@ -65,22 +68,38 @@ body::after {
 }
 
 #score, #fps {
-  position: absolute;
-  bottom: 0.5em;
-  left: 0.5em;
+  position: fixed;
+  bottom: 10px;
+  left: auto;
+  right: auto;
   font-size: 5vh;
   color: #6f0;
 }
 
+#score {
+  left: 10px;
+}
+
 #fps {
-  left: auto;
-  right: 0.5em;
+  right: 10px;
   font-size: 2.5vh;
+}
+
+#fullscreen {
+  position: fixed;
+  width: 8vh;
+  height: 8vh;
+  top: 1.5vh;
+  right: 0;
+  background-color: rgba(0,0,0,0.5);
+  box-shadow: 0px 0px 4px #6f0;
+  border-radius: 0 0 0 100% / 0 0 0 100%;
+  cursor: pointer;
 }
 
 #start {
   transform: scale(0);
-  position: absolute;
+  position: fixed;
   width: 8em;
   height: 5em;
   top: 0;
@@ -92,55 +111,54 @@ body::after {
   text-align: center;
   color: #6f0;
   cursor: pointer;
-  transition: transform 1s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  transition: transform 1s ease-in;
 }
 
 #start.active {
   transform: scale(1);
+  transition-timing-function: cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-#touch {
-  position: absolute;
+#control {
+  position: fixed;
   top: 0;
   bottom: 0;
   left: 0;
   right: 0;
 }
 
-#touch div {
+#control div {
   display: none;
   position: absolute;
   width: 12vmax;
   height: 12vmax;
-  border-width: 3px;
-  border-style: solid;
   border-radius: 50%;
 }
 
-#touch.active div {
+#control.active div {
   display: block;
 }
 
 #left {
   left: 1vmax;
   bottom: calc(8vh + 12vmax);
-  border: 3px solid rgba(255,255,255,0.3);
+  background-color: rgba(255,255,255,0.1);
 }
 
 #right {
   left: 6vmax;
   bottom: 8vh;
-  border: 3px solid rgba(255,255,255,0.3);
+  background-color: rgba(255,255,255,0.1);
 }
 
 #up {
   right: 1vmax;
   bottom: calc(8vh + 12vmax);
-  border: 6px solid rgba(255,0,0,0.4);
+  background-color: rgba(255,0,0,0.2);
 }
 
 #down {
   right: 6vmax;
   bottom: 8vh;
-  border: 6px solid rgba(60,255,60,0.4);
+  background-color: rgba(60,255,60,0.2);
 }
