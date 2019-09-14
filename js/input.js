@@ -26,8 +26,9 @@ let
 
 
 // initialise input
-export function inputInit(toucharea) {
+export function inputInit() {
 
+  // default input state
   for (let k in key) input[key[k]] = 0;
 
   // key press events
@@ -40,17 +41,18 @@ export function inputInit(toucharea) {
   window.addEventListener('mouseup', mouseButtonHandler);
 
   // touch events
-  if (toucharea) {
-    input.touchactive = false;
-    input.toucharea = toucharea;
-    toucharea.addEventListener('touchstart', touchHandler);
-    toucharea.addEventListener('touchend', touchHandler);
+  document.addEventListener('touchstart', () => {
 
-    // pointer lock
-    document.addEventListener('click', () => {
-      toucharea.requestPointerLock();
-    });
-  }
+    // touch activated
+    document.body.classList.add('touch');
+    document.addEventListener('touchstart', touchHandler);
+    document.addEventListener('touchend', touchHandler);
+    document.addEventListener('touchmove', e => e.preventDefault());
+
+  }, { once: true });
+
+  // pointer lock
+  document.addEventListener('click', () => document.documentElement.requestPointerLock() );
 
   // gamepad connection
   window.addEventListener('gamepadconnected', () => {
@@ -148,16 +150,13 @@ function mouseButtonHandler(e) {
 // touch handler
 function touchHandler(e) {
 
-  if (!input.touchactive) {
-    input.touchactive = true;
-    input.toucharea.classList.add('active');
-  }
-
-  let point = e.changedTouches;
+  resetLeftRight();
+  resetUpDown();
+  let point = e.touches;
 
   for (let p = 0; p < point.length; p++) {
     let t = point[p].target.dataset.input;
-    if (t) input[t] = (e.type === 'touchstart' ? 1 : 0);
+    if (t) input[t] = 1;
   }
 
 }

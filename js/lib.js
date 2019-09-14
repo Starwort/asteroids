@@ -39,14 +39,14 @@ export function eventThrottle(element, event, callback, delay) {
 
 // random integer between lo and hi
 export function randomInt(lo, hi) {
-  return Math.floor(Math.random() * (hi - lo + 1)) + lo;
+  return Math.floor(random() * (hi - lo + 1)) + lo;
 }
 
 
 // predictable random number
 const
   randomFactor = 2796203,
-  randomStart = Math.round(randomFactor / 50);
+  randomStart = Math.round(randomFactor / 42);
 
 export let randomSeed = randomStart;
 export function random() {

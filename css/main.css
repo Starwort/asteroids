@@ -86,6 +86,7 @@ body::after {
 }
 
 #fullscreen {
+  display: none;
   position: fixed;
   width: 8vh;
   height: 8vh;
@@ -95,6 +96,10 @@ body::after {
   box-shadow: 0px 0px 4px #6f0;
   border-radius: 0 0 0 100% / 0 0 0 100%;
   cursor: pointer;
+}
+
+#fullscreen.active {
+  display: block;
 }
 
 #start {
@@ -135,30 +140,30 @@ body::after {
   border-radius: 50%;
 }
 
-#control.active div {
+.touch #control div {
   display: block;
 }
 
 #left {
   left: 1vmax;
   bottom: calc(8vh + 12vmax);
-  background-color: rgba(255,255,255,0.1);
+  background-color: rgba(255,255,255,0.3);
 }
 
 #right {
   left: 6vmax;
   bottom: 8vh;
-  background-color: rgba(255,255,255,0.1);
+  background-color: rgba(255,255,255,0.3);
 }
 
 #up {
   right: 1vmax;
   bottom: calc(8vh + 12vmax);
-  background-color: rgba(255,0,0,0.2);
+  background-color: rgba(255,0,0,0.4);
 }
 
 #down {
   right: 6vmax;
   bottom: 8vh;
-  background-color: rgba(60,255,60,0.2);
+  background-color: rgba(60,255,60,0.4);
 }

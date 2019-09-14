@@ -37,7 +37,7 @@ class Sprite {
     this.maxY = game.maxY;
 
     // direction
-    this.dir = Math.random() * Math.PI * 2;
+    this.dir = lib.random() * Math.PI * 2;
 
     // sizing
     this.size = game.spriteSize;
@@ -45,16 +45,16 @@ class Sprite {
 
     // rotation acceleration and deceleration
     this.dirRot = 0;
-    this.dirRotAcc = 0.5;
-    this.dirRotMax = 0.4;
+    this.dirRotAcc = 0.25;
+    this.dirRotMax = 0.5;
     this.dirRotDec = 0.25;
 
     // velocity acceleration and deceleration
     this.velX = 0;
     this.velY = 0;
-    this.velAcc = 15;
-    this.velMax = 25;
-    this.velDec = 2;
+    this.velAcc = 900;
+    this.velMax = 1500;
+    this.velDec = 120;
 
     // styles
     this.lineWidth = Math.ceil(this.maxX / game.scale / 150);
@@ -108,8 +108,7 @@ class Sprite {
       this.dirRot = Math.min(Math.max(-this.dirRotMax, this.dirRot), this.dirRotMax);
 
     }
-
-    if (this.dirRot) {
+    else if (this.dirRot && this.dirRotDec) {
 
       // decrease rotation
       let f = (this.dirRot > 0 ? -1 : 1);
@@ -142,8 +141,8 @@ class Sprite {
     if (this.velY) this.velY += (this.velDec / time) * (this.velY > 0 ? -1 : 1);
 
     // change position
-    this.x += this.velX;
-    this.y += this.velY;
+    this.x += this.velX / time;
+    this.y += this.velY / time;
 
     // wrap around
     if (this.x < -this.boundX) this.x = this.boundX;
@@ -276,8 +275,8 @@ export class Bullet extends Sprite {
     this.x = ship.x + Math.cos(ship.dir) * ship.scaleFactor;
     this.y = ship.y + Math.sin(ship.dir) * ship.scaleFactor;
 
-    this.velX = Math.cos(this.dir) * 10;
-    this.velY = Math.sin(this.dir) * 10;
+    this.velX = Math.cos(this.dir) * 600;
+    this.velY = Math.sin(this.dir) * 600;
     this.velDec = 2;
     this.lifespan = distance;
 
@@ -319,10 +318,10 @@ export class PowerUp extends Sprite {
 
     // random position
     let
-      rPos = Math.ceil((Math.random() - 0.5) * 2 * this.maxX),
+      rPos = Math.ceil((lib.random() - 0.5) * 2 * this.maxX),
       fPos = Math.random < 0.5 ? -this.boundX : this.boundX;
 
-    if (Math.random() < 0.5) {
+    if (lib.random() < 0.5) {
       this.x = rPos;
       this.y = fPos;
     }
@@ -336,8 +335,8 @@ export class PowerUp extends Sprite {
     this.dirRotDec = 0;
 
     // velocity acceleration and deceleration
-    this.velX = (lib.randomInt(0, 1) - 0.5) * 3;
-    this.velY = (lib.randomInt(0, 1) - 0.5) * 3;
+    this.velX = (lib.random() - 0.5) * 400;
+    this.velY = (lib.random() - 0.5) * 400;
     this.velDec = 0;
 
     // radian (pi multiples) and radius pairs
@@ -370,10 +369,10 @@ export class Rock extends Sprite {
 
     // random position
     let
-      rPos = Math.ceil((Math.random() - 0.5) * 2 * this.maxX),
+      rPos = Math.ceil((lib.random() - 0.5) * 2 * this.maxX),
       fPos = Math.random < 0.5 ? -this.boundX : this.boundX;
 
-    if (Math.random() < 0.5) {
+    if (lib.random() < 0.5) {
       this.x = rPos;
       this.y = fPos;
     }
@@ -383,12 +382,12 @@ export class Rock extends Sprite {
     }
 
     // random rotation
-    this.dirRot = Math.random() * 0.03;
+    this.dirRot = lib.random() * 0.03;
     this.dirRotDec = 0;
 
     // velocity acceleration and deceleration
-    this.velX = (Math.random() - 0.5) * 2;
-    this.velY = (Math.random() - 0.5) * 2;
+    this.velX = (lib.random() - 0.5) * 120;
+    this.velY = (lib.random() - 0.5) * 120;
     this.velDec = 0;
 
     // random shape
@@ -396,7 +395,7 @@ export class Rock extends Sprite {
     let sLast = 0, rLast = 1;
 
     while (sLast < sMax) {
-      sLast += (Math.random() * sMin) + 0.2;
+      sLast += (lib.random() * sMin) + 0.2;
       rLast = (rLast === 1 ? lib.randomInt(6, 10) / 10 : 1);
       this.shape.push([sLast, rLast]);
     }

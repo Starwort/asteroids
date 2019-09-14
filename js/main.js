@@ -14,11 +14,11 @@ const game = {
   fullscreen: '#fullscreen',
   points: 0,
   fps: '#fps span',
-  controlarea: '#control',
   hiscore: '#hiscore',
   hipoints: parseInt(localStorage.getItem('hipoints') || 0, 10),
   powers: ['shots', 'shield', 'speed', 'size', 'strong', 'spread'],
-  powerChanceMin: 0.5
+  powerChanceMin: 0.5,
+  rocksMax: 6
 };
 
 let
@@ -58,7 +58,7 @@ window.addEventListener('DOMContentLoaded', () => {
   canvasInit(game);
 
   // game input
-  game.input = inputInit(document.querySelector(game.controlarea));
+  game.input = inputInit();
   sound.init();
 
   // tab active handler
@@ -98,7 +98,7 @@ function gameNew() {
   game.start.classList.remove('active');
 
   game.level = 1;
-  game.powerChance = game.powerChanceMin;
+  game.powerChance = 1;
 
   updatePoints();
   defineSprites();
@@ -170,7 +170,7 @@ function defineSprites() {
 // create rocks
 function createRocks(count) {
 
-  count = count || game.level;
+  count = count || Math.min(game.level, game.rocksMax);
 
   while (count > 0) {
     game.rock.add(new sprite.Rock(game));
@@ -338,11 +338,11 @@ function userShipPowerUp(ship, powerup) {
 
     case 'speed':
       ship.dirRotAcc += inc * 0.1;
-      ship.dirRotMax += inc * 0.1;
-      ship.dirRotDec += inc * 0.05;
-      ship.velAcc += inc * 2;
-      ship.velMax += inc * 2;
-      ship.velDec += inc * 0.2;
+      ship.dirRotMax += inc * 0.2;
+      ship.dirRotDec += inc * 0.1;
+      ship.velAcc += inc * 120;
+      ship.velMax += inc * 120;
+      ship.velDec += inc * 60;
       break;
 
     case 'size':
@@ -393,8 +393,8 @@ function splitRock(rock) {
       r.x = rock.x;
       r.y = rock.y;
 
-      r.velX = (Math.random() - 0.5) * (2.5 / scale);
-      r.velY = (Math.random() - 0.5) * (2.5 / scale);
+      r.velX = (lib.random() - 0.5) * (150 / scale);
+      r.velY = (lib.random() - 0.5) * (150 / scale);
 
       game.rock.add(r);
 
@@ -427,7 +427,7 @@ function splitRock(rock) {
 function addPowerUp(item) {
 
   // no power-up if two active or random chance
-  if (game.powerUp.size > 1 || Math.random() > game.powerChance) {
+  if (game.powerUp.size > 1 || lib.random() > game.powerChance) {
     game.powerChance += 0.1; // increase chance of new power-up
     return;
   }
@@ -435,7 +435,7 @@ function addPowerUp(item) {
   // reset power-up chance
   game.powerChance = game.powerChanceMin;
 
-  let pu = new sprite.PowerUp(game, game.powers[lib.randomInt(0, Math.min(game.level, game.powers.length - 1))], (game.level < 3 || Math.random() > 0.1 ? 1 : -1));
+  let pu = new sprite.PowerUp(game, game.powers[lib.randomInt(0, Math.min(game.level - 1, game.powers.length - 1))], (game.level < 3 || lib.random() > 0.1 ? 1 : -1));
 
   // invulnerable always increments
   if (pu.text === 'strong') pu.inc = 1;
@@ -467,8 +467,8 @@ function explode(item, count = 6) {
     r.lineBlurColor = item.lineBlurColor;
     r.fillColor = item.fillColor;
 
-    r.velX = (Math.random() - 0.5) * Math.random() * 8;
-    r.velY = (Math.random() - 0.5) * Math.random() * 8;
+    r.velX = (lib.random() - 0.5) * lib.random() * 300;
+    r.velY = (lib.random() - 0.5) * lib.random() * 300;
 
     game.explode.add(r);
 

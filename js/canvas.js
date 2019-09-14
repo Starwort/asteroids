@@ -37,12 +37,18 @@ export function canvasInit(game) {
 
   }
 
-  // fullscreen
-  if (game.fullscreen) game.fullscreen.addEventListener('click', () => {
+  // enable fullscreen
+  if (game.fullscreen && document.fullscreenEnabled) {
 
-    if (!document.fullscreenElement) document.documentElement.requestFullscreen();
-    else if (document.exitFullscreen) document.exitFullscreen();
+    game.fullscreen.classList.add('active');
 
-  });
+    game.fullscreen.addEventListener('click', () => {
+
+      if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+      else if (document.exitFullscreen) document.exitFullscreen();
+
+    });
+
+  }
 
 }
