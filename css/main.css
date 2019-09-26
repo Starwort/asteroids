@@ -102,8 +102,8 @@ body::after {
   display: block;
 }
 
-#start {
-  transform: scale(0);
+#connect, #start {
+  font-size: 6vmin;
   position: fixed;
   width: 8em;
   height: 5em;
@@ -112,14 +112,25 @@ body::after {
   left: 0;
   right: 0;
   margin: auto;
-  font-size: 6vmin;
   text-align: center;
   color: #6f0;
   cursor: pointer;
+  transform: scale(0);
   transition: transform 1s ease-in;
 }
 
-#start.active {
+#name {
+  font-family: hyperspace, sans-serif;
+  font-size: 6vmin;
+  width: 6em;
+  text-align: center;
+  color: #6f0;
+  background-color: transparent;
+  border: 0 none;
+  outline: 0 none;
+}
+
+#connect.active, #start.active {
   transform: scale(1);
   transition-timing-function: cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }

@@ -48,8 +48,10 @@ const
   randomFactor = 2796203,
   randomStart = Math.round(randomFactor / 42);
 
-export let randomSeed = randomStart;
+export let seed = 0;
+export function setSeed(v = 0) { seed = v; }
+
 export function random() {
-  randomSeed = ((randomSeed * 125) % randomFactor) || randomStart;
-  return randomSeed / randomFactor;
+  seed = ((seed * 125) % randomFactor) || randomStart;
+  return seed / randomFactor;
 }

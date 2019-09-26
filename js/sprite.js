@@ -12,17 +12,11 @@ class Sprite {
     // canvas
     this.ctx = game.ctx;
 
-    // input
-    this.input = game.input;
-
     // is alive?
     this.alive = true;
     this.health = null;
     this.lifespan = null;
     this.strong = null;
-
-    // is user-controlled?
-    this.userControl = false;
 
     // shape
     this.shape = [];
@@ -81,7 +75,7 @@ class Sprite {
   }
 
   // move sprite
-  move(time) {
+  move(time, input) {
 
     // reduce lifespan
     if (this.lifespan) {
@@ -99,7 +93,7 @@ class Sprite {
     }
 
     // rotate
-    let rot = (this.userControl ? this.input.right - this.input.left : 0);
+    let rot = (input ? input.right - input.left : 0);
 
     if (rot) {
 
@@ -121,7 +115,7 @@ class Sprite {
     this.dir += this.dirRot;
 
     // velocity
-    if (this.userControl && this.input.down) {
+    if (input && input.down) {
 
       // increase velocity
       let v = this.velAcc / time;
@@ -154,13 +148,13 @@ class Sprite {
   }
 
   // draw sprite
-  draw(time) {
+  draw(time, input) {
 
     // sprite is dead?
     if (!this.alive) return;
 
     // move
-    this.move(time);
+    this.move(time, input);
 
     let ctx = this.ctx;
 
@@ -213,6 +207,42 @@ class Sprite {
       ctx.fillStyle = this.lineColor;
       ctx.fillText(this.text, this.x, this.y);
     }
+
+  }
+
+  // serialise object to string
+  export() {
+    return {
+      type: this.type,
+      text: this.text,
+      alive: this.alive,
+      health: this.health,
+      lifespan: this.livespan,
+      strong: this.strong,
+      size: this.size,
+      scale: this.scale,
+      x: this.x,
+      y: this.y,
+      dir: this.dir,
+      dirRot: this.dirRot,
+      dirRotAcc: this.dirRotAcc,
+      dirRotMax: this.dirRotMax,
+      dirRotDec: this.dirRotDec,
+      velX: this.velX,
+      velY: this.velY,
+      velAcc: this.velAcc,
+      velMax: this.velMax,
+      velDec: this.velDec
+    };
+
+  }
+
+
+  // update object from string
+  import(obj) {
+
+    for (let p in obj) this[p] = obj[p];
+    this.setScale = this.scale;
 
   }
 

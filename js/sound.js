@@ -24,12 +24,13 @@ export function init() {
 
 
 // play audio
-export function play(name) {
+export function play(name, volume = 1) {
 
   const effect = sound[name];
   if (!effect || !effect.audio || !effect.loaded || effect.audio.muted) return;
 
   if (effect.audio.currentTime) effect.audio.currentTime = 0;
+  effect.audio.volume = volume;
   effect.audio.play();
 
 }

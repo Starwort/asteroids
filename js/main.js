@@ -4,11 +4,14 @@ import { canvasInit } from './canvas.js';
 import { inputInit, inputGamepad } from './input.js';
 import * as sound from './sound.js';
 import * as sprite from './sprite.js';
+import * as ws from './wsclient.js';
 
 const game = {
   active: false,
   node: '#game',
   start: '#start',
+  connect: '#connect',
+  namefield: '#name',
   health: '#health',
   score: '#score span',
   fullscreen: '#fullscreen',
@@ -37,9 +40,13 @@ if ('serviceWorker' in navigator) {
 // initialise
 window.addEventListener('DOMContentLoaded', () => {
 
+  // connect
+  game.connect = document.querySelector(game.connect);
+  game.namefield = document.querySelector(game.namefield);
+
   // start
   game.start = document.querySelector(game.start);
-  game.start.addEventListener('click', gameNew);
+  //game.start.addEventListener('click', gameNew);
 
   // health
   game.health = document.querySelector(game.health);
@@ -64,10 +71,35 @@ window.addEventListener('DOMContentLoaded', () => {
   // tab active handler
   document.addEventListener('visibilitychange', gameActive, false);
 
-  // click to start
-  gameOver();
+  // state request handlers
+  window.addEventListener('ws-statereq', gameStateRequest);
+  window.addEventListener('ws-stateset', gameStateSet);
+  window.addEventListener('ws-joined', gameJoined);
+
+  // enter name
+  enterName();
 
 });
+
+
+// enter name
+function enterName() {
+
+  game.connect.classList.add('active');
+  game.namefield.addEventListener('change', () => {
+
+    game.name = game.namefield.value.trim().toUpperCase() || '?';
+    game.connect.classList.remove('active');
+
+    // start network communications and send name
+    ws.send({ type: 'name', data: { name: game.name } });
+
+    // fire to start
+    gameOver();
+
+  }, { once: true });
+
+}
 
 
 // show game over
@@ -97,13 +129,62 @@ function gameNew() {
   clearInterval(fireStart);
   game.start.classList.remove('active');
 
+  ws.send(JSON.stringify({ type: 'start' }));
+
   game.level = 1;
   game.powerChance = 1;
 
   updatePoints();
   defineSprites();
-  game.health.value = game.userShip.health;
   gameActive();
+
+}
+
+// respond to game state request
+function gameStateRequest(event) {
+
+  let data = {
+    id: event.detail,
+    seed: lib.seed,
+    level: game.level,
+    powerChance: game.powerChance,
+    input: ws.input,
+    rock: [],
+    userShip: []
+  };
+
+  game.rock.forEach(rock => data.rock.push(rock.export()));
+  game.userShip.forEach(ship => data.userShip.push(ship.export()));
+
+  ws.send(JSON.stringify({ type: 'stateres', data }));
+
+}
+
+
+// set game state from response
+function gameStateSet(event) {
+
+  let data = event.detail;
+
+  lib.setSeed(data.seed);
+  game.level = data.level;
+  game.powerChance = data.powerChance;
+
+  game.rock = new Set();
+  data.rock.forEach(init => {
+    let rock = new sprite.Rock(game);
+    rock.import(init);
+    game.rock.add(rock);
+  });
+
+  game.userShip = [];
+  data.userShip.forEach(init => {
+    let ship = createShip();
+    ship.import(init);
+    game.userShip.push(ship);
+  });
+
+  createPlayer();
 
 }
 
@@ -149,7 +230,7 @@ function updateShield(ship, s) {
 // define initial sprites
 function defineSprites() {
 
-  // five random rocks
+  // random rocks
   game.rock = new Set();
   createRocks();
 
@@ -159,10 +240,9 @@ function defineSprites() {
   // power ups
   game.powerUp = new Set();
 
-  // user-controlled ship
-  game.userShip = createShip();
-  game.userShip.userControl = true;
-  game.userShip.strong = 5000;
+  // create player's ship
+  game.userShip = [];
+  if (!ws.playerId) createPlayer();
 
 }
 
@@ -179,6 +259,35 @@ function createRocks(count) {
 
 }
 
+
+// create player's ship
+function createPlayer() {
+
+  game.userIdx = ws.playerId || 0;
+  game.userShip[game.userIdx] = createShip();
+  game.userShip[game.userIdx].player = true;
+  game.userShip[game.userIdx].strong = 5000;
+
+  game.health.value = game.userShip[game.userIdx].health;
+
+  ws.send(JSON.stringify({ type: 'join', data: game.userShip[game.userIdx].export() }));
+
+}
+
+
+// player joined
+function gameJoined(event) {
+
+  if (!game.userShip) return;
+
+  let
+    data = event.detail,
+    sId = data.id;
+
+  game.userShip[sId] = createShip('#f60', '#f60', '#311');
+  game.userShip[sId].import(data.ship);
+
+}
 
 // create a new ship
 function createShip(line = '#6f0', blur = '#6f0', fill = '#131') {
@@ -201,11 +310,11 @@ function createShip(line = '#6f0', blur = '#6f0', fill = '#131') {
 
 
 // shoot bullet
-function shoot(ship) {
+function shoot(ship, input) {
 
-  if (!ship || !ship.alive || ship.bullet.size >= ship.bulletMax || (ship.bulletFire && game.input.up)) return;
+  if (!ship || !ship.alive || ship.bullet.size >= ship.bulletMax || (ship.bulletFire && input.up)) return;
 
-  ship.bulletFire = !!game.input.up;
+  ship.bulletFire = !!input.up;
   if (ship.bulletFire) {
     sound.play('shoot');
     ship.bullet.add( new sprite.Bullet(game, ship, ship.bulletDist) );
@@ -218,7 +327,7 @@ function shoot(ship) {
 function main() {
 
   const fpsRecMax = 100;
-  let last = 0, fpsPrev = 0, fpsTot = 0, fpsRec = fpsRecMax;
+  let lastInput, last = 0, fpsPrev = 0, fpsTot = 0, fpsRec = fpsRecMax;
 
   rAF = requestAnimationFrame(loop);
 
@@ -250,8 +359,15 @@ function main() {
       // gamepad input
       inputGamepad();
 
-      // create shots
-      shoot(game.userShip);
+      // remote input
+      if (ws.input) {
+
+        let input = JSON.stringify({ type: 'in', data: game.input });
+        if (input !== lastInput) ws.send(input);
+
+        lastInput = input;
+
+      }
 
       // clear canvas
       game.ctx.clearRect(-game.maxX, -game.maxY, game.width, game.height);
@@ -259,30 +375,36 @@ function main() {
       // draw rocks
       drawAll(game.rock, fps);
 
-      // draw user ship
-      game.userShip.draw(fps);
-
       // draw power-ups
       drawAll(game.powerUp, fps);
 
-      // draw user bullets
-      drawAll(game.userShip.bullet, fps);
+      game.userShip.forEach((ship, i) => {
+
+        // draw ships
+        let input = (ws.input && ws.input[i]) || (i === game.userIdx && game.input);
+        ship.draw(fps, input);
+
+        // draw bullets
+        shoot(ship, input);
+        drawAll(ship.bullet, fps);
+
+        // detect bullet/rock collision
+        sprite.collideSetUnique(ship.bullet, game.rock, (bullet, rock) => bulletRock(ship, bullet, rock));
+
+        if (ship.alive) {
+
+          // detect user ship/powerup collision
+          sprite.collideOne(ship, game.powerUp, shipPowerUp);
+
+          // detect user ship/rock collision
+          sprite.collideOne(ship, game.rock, shipRock);
+
+        }
+
+      });
 
       // draw explosions
       drawAll(game.explode, fps);
-
-      // detect user bullet/rock collision
-      sprite.collideSetUnique(game.userShip.bullet, game.rock, userBulletRock);
-
-      if (game.userShip.alive) {
-
-        // detect user ship/powerup collision
-        sprite.collideOne(game.userShip, game.powerUp, userShipPowerUp);
-
-        // detect user ship/rock collision
-        sprite.collideOne(game.userShip, game.rock, userShipRock);
-
-      }
 
     }
 
@@ -305,18 +427,18 @@ function drawAll(set, time) {
 }
 
 
-// user's bullet hits a rock
-function userBulletRock(bullet, rock) {
+// bullet hits a rock
+function bulletRock(ship, bullet, rock) {
 
-  updatePoints(10 / rock.scale);
-  game.userShip.bullet.delete(bullet);
+  if (ship.player) updatePoints(10 / rock.scale);
+  ship.bullet.delete(bullet);
   splitRock(rock);
 
 }
 
 
 // user's ship hits a powerup
-function userShipPowerUp(ship, powerup) {
+function shipPowerUp(ship, powerup) {
 
   let inc = powerup.inc;
 
@@ -329,7 +451,7 @@ function userShipPowerUp(ship, powerup) {
       break;
 
     case 'shots':
-      ship.bulletMax = Math.min(Math.max(1, ship.bulletMax + inc), 10);
+      ship.bulletMax = Math.min(Math.max(1, ship.bulletMax + inc), 5);
       break;
 
     case 'spread':
@@ -362,7 +484,7 @@ function userShipPowerUp(ship, powerup) {
 
 
 // user's ship hits a rock
-function userShipRock(ship, rock) {
+function shipRock(ship, rock) {
 
   if (!ship.strong) updateShield(ship, -rock.size);
 
@@ -413,10 +535,14 @@ function splitRock(rock) {
 
   // any rocks left?
   if (!game.rock.size) {
-    updatePoints(game.level * 100);
-    updateShield(game.userShip, 50);
+
+    game.userShip.forEach(ship => {
+      updateShield(ship, 50);
+      ship.strong = 5000;
+      if (ship.player) updatePoints(game.level * 100);
+    });
+
     game.level++;
-    game.userShip.strong = 5000;
     createRocks();
   }
 
@@ -467,8 +593,8 @@ function explode(item, count = 6) {
     r.lineBlurColor = item.lineBlurColor;
     r.fillColor = item.fillColor;
 
-    r.velX = (lib.random() - 0.5) * lib.random() * 300;
-    r.velY = (lib.random() - 0.5) * lib.random() * 300;
+    r.velX = (lib.random() - 0.5) * lib.random() * 500;
+    r.velY = (lib.random() - 0.5) * lib.random() * 500;
 
     game.explode.add(r);
 
