@@ -70,6 +70,9 @@ export function inputInit() {
 
 }
 
+function withDeadzone(axisPos) {
+  return (axisPos > -0.025 && axisPos < 0.025) ? 0 : axisPos;
+}
 
 // gamepad input
 export function inputGamepad() {
@@ -79,8 +82,8 @@ export function inputGamepad() {
   // first axes on first gamepad
   let
     gp = navigator.getGamepads()[0],
-    ax = Math.round(gp.axes[0] * gpSensitivity),
-    ad = gpDef.axes[0];
+    ax = Math.round(withDeadzone(gp.axes[0]) * gpSensitivity),
+    ad = withDeadzone(gpDef.axes[0]);
 
   if (ax === ad) {
     if (gpAxesSet) {
