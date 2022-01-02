@@ -71,6 +71,7 @@ export function inputInit() {
 }
 
 function withDeadzone(axisPos) {
+  // 2.5% deadzone
   return (axisPos > -0.025 && axisPos < 0.025) ? 0 : axisPos;
 }
 
@@ -82,20 +83,11 @@ export function inputGamepad() {
   // first axes on first gamepad
   let
     gp = navigator.getGamepads()[0],
-    ax = Math.round(withDeadzone(gp.axes[0]) * gpSensitivity),
     ad = withDeadzone(gpDef.axes[0]);
 
-  if (ax === ad) {
-    if (gpAxesSet) {
-      resetLeftRight();
-      gpAxesSet = false;
-    }
-  }
-  else {
-    input.left = ax < ad ? 1 : 0;
-    input.right = 1 - input.left;
-    gpAxesSet = true;
-  }
+  // give fine control when gamepad is used
+  input.left = 0;
+  input.right = ad;
 
   // check all buttons
   let bt = [0,0];
