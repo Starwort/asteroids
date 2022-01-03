@@ -102,6 +102,8 @@ class Sprite {
     let rot = (this.userControl ? this.input.right - this.input.left : 0);
 
     if (rot) {
+      
+      console.log('rotating by', rot, this.input);
 
       // increase rotation
       this.dirRot += (this.dirRotAcc / time) * rot;
