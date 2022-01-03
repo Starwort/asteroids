@@ -83,7 +83,7 @@ export function inputGamepad() {
   // first axes on first gamepad
   let
     gp = navigator.getGamepads()[0],
-    ad = withDeadzone(gpDef.axes[0]);
+    ad = withDeadzone(gp.axes[0]);
 
   // give fine control when gamepad is used
   input.left = 0;
